@@ -202,6 +202,12 @@ async function loadGameRecords() {
     if (currentState) {
       $('game').value = currentState.game && gameRecords.has(currentState.game) ? currentState.game : '';
       renderGameRecord(currentState, currentOutput);
+    } else if (gameRecords.has('iracing')) {
+      // The production instrument opens on the dataset's iRacing record, whose
+      // confidence is medium. Guidance remains explicitly pending until a
+      // successful geometry result exists to map into the record.
+      $('game').value = 'iracing';
+      renderPendingGameRecord(gameRecords.get('iracing'));
     }
   } catch {
     gameRecords = new Map();
@@ -228,6 +234,17 @@ function clearGameRecord() {
   panel.replaceChildren();
 }
 
+function renderPendingGameRecord(record) {
+  const panel = $('game-record');
+  if (!record) {
+    clearGameRecord();
+    return;
+  }
+  panel.innerHTML = `${recordHeader(record)}
+    <div class="game-record__pending"><strong>Game source pending</strong><span>Calculate the current rig to map this dataset record.</span></div>`;
+  panel.hidden = false;
+}
+
 function sourceList(record) {
   return `<div class="game-record__sources">
     <h3>Sources</h3>
@@ -247,7 +264,7 @@ function conventionLine(record) {
 function recordHeader(record) {
   return `<header class="game-record__header">
     <div><p class="game-record__eyebrow">Game setting guidance</p><h2>${escapeHtml(record.game)}</h2></div>
-    <span class="confidence-badge confidence-badge--${escapeHtml(record.confidence)}">${escapeHtml(record.confidence)} confidence</span>
+    <span class="confidence-badge confidence-badge--${escapeHtml(record.confidence)}">${escapeHtml(record.confidence.toUpperCase())} CONFIDENCE</span>
   </header>
   <dl class="game-record__facts">
     <div><dt>Setting</dt><dd>${escapeHtml(record.settingName ?? 'No FOV setting')}</dd></div>
@@ -352,10 +369,81 @@ function hideActions() {
   delete a.dataset.json;
 }
 
+function primaryReadouts(state, results) {
+  if (state.layout === 'single') {
+    return [
+      {
+        label: 'Horizontal span',
+        radians: results.horizontalSpanRad,
+        note: state.curveRadiusMm ? 'physical span across the curved panel' : 'physical span across the visible panel width',
+      },
+      {
+        label: 'Vertical span',
+        radians: results.verticalSpanRad,
+        note: 'physical span across the visible panel height',
+      },
+    ];
+  }
+  return [
+    {
+      label: 'Visible envelope',
+      radians: results.visibleEnvelopeRad,
+      note: 'outside edge to outside edge across all three panels',
+    },
+    {
+      label: 'Active image coverage',
+      radians: results.activeImageCoverageRad,
+      note: 'visible envelope less the two bezel seams',
+    },
+  ];
+}
+
+function readoutHtml(readout) {
+  return `<div class="degree-readout">
+    <span>${readout.label}</span>
+    <strong>${toDegrees(readout.radians).toFixed(1)}<small>deg</small></strong>
+    <p>${readout.note}</p>
+  </div>`;
+}
+
+function resetMethodPanel(note = 'Submit the rig to substitute measured dimensions into the active geometry model.') {
+  $('method-input').textContent = 'Awaiting a valid rig';
+  $('method-panel-width').textContent = 'Visible width required';
+  $('method-angles').textContent = 'H --.- / V --.-';
+  $('method-equation').textContent = 'H = 2 × atan(W ÷ (2 × D))';
+  $('method-note').textContent = note;
+}
+
+function updateMethodPanel(state, out) {
+  if (!state || !out?.ok) {
+    resetMethodPanel(out?.error?.message);
+    return;
+  }
+
+  const r = out.results;
+  $('method-input').textContent = `${state.widthMm} × ${state.heightMm} mm panel / ${state.eyeDistanceMm} mm eye distance`;
+  $('method-panel-width').textContent = `${state.widthMm} mm active width`;
+
+  if (state.layout === 'triple') {
+    $('method-angles').textContent = `E ${deg(r.visibleEnvelopeRad)} / A ${deg(r.activeImageCoverageRad)}`;
+    $('method-equation').textContent = `3 × ${state.widthMm} mm panels + ${r.seamGapMm} mm seams; yaw ${deg(r.requestedYawRad)} → envelope ${deg(r.visibleEnvelopeRad)}`;
+    $('method-note').textContent = 'The triple model traces the center and side-panel rays, then reports the outer envelope and subtracts angular seam occlusion for active-image coverage.';
+  } else if (state.curveRadiusMm) {
+    $('method-angles').textContent = `H ${deg(r.horizontalSpanRad)} / V ${deg(r.verticalSpanRad)}`;
+    $('method-equation').textContent = `s = ${state.curveRadiusMm} − √(${state.curveRadiusMm}² − (${state.widthMm} ÷ 2)²) = ${r.curve.sagittaMm.toFixed(1)} mm; H = ${deg(r.horizontalSpanRad)}`;
+    $('method-note').textContent = 'The concave-panel model uses chord width and radius to find sagitta, then uses the closer edge depth for the physical horizontal span.';
+  } else {
+    $('method-angles').textContent = `H ${deg(r.horizontalSpanRad)} / V ${deg(r.verticalSpanRad)}`;
+    $('method-equation').textContent = `H = 2 × atan(${state.widthMm} ÷ (2 × ${state.eyeDistanceMm})) = ${deg(r.horizontalSpanRad)}; V = ${deg(r.verticalSpanRad)}`;
+    $('method-note').textContent = 'Width, height, and eye distance are all canonical millimetre values. Display units never change the physical rig.';
+  }
+}
+
 function renderResults(state, out) {
   const box = $('results');
   hideActions();
   clearGameRecord();
+  updateMethodPanel(state, out);
   if (!out.ok) {
     box.innerHTML = `<div class="alert alert-error" role="alert">
       <strong>Can't calculate this rig.</strong> ${out.error.message}
@@ -394,7 +482,9 @@ function renderResults(state, out) {
     rows += row('Measurement sensitivity', sens(r.sensitivity));
   }
 
+  const readouts = primaryReadouts(state, r);
   box.innerHTML = `${warn}
+    <div class="readout-grid">${readouts.map(readoutHtml).join('')}</div>
     <div class="table-wrap"><table class="results-table"><caption class="sr-only">Calculated physical spans</caption>${rows}</table></div>
     <p class="note">These are <strong>physical angular spans</strong>, not game FOV settings. Per-game
     conversion records — each with its source and verification date — ship with the game dataset.</p>
@@ -417,7 +507,149 @@ function summaryText(state, out) {
   const body = state.layout === 'single'
     ? `horizontal ${deg(r.horizontalSpanRad)}, vertical ${deg(r.verticalSpanRad)}`
     : `envelope ${deg(r.visibleEnvelopeRad)}, active ${deg(r.activeImageCoverageRad)}, side angle ${deg(r.requestedYawRad)}`;
-  return `${head}\n${body}\n${location.origin}/tools/fov/#${encodeStateV1(state)}`;
+  return `${head}\n${body}\n${canonicalShareUrl(state)}`;
+}
+
+function canonicalShareUrl(state) {
+  return `${location.origin}/tools/fov/#${encodeStateV1(state)}`;
+}
+
+function shareCardRigSummary(state) {
+  const layout = state.layout === 'triple' ? 'TRIPLE' : 'SINGLE';
+  const profile = state.curveRadiusMm ? `${state.curveRadiusMm}R CURVED` : 'FLAT';
+  return `${layout} / ${profile} / ${state.widthMm} × ${state.heightMm} MM / EYE ${state.eyeDistanceMm} MM`;
+}
+
+function fitCanvasText(ctx, text, maxWidth, startSize, minSize, family) {
+  let size = startSize;
+  do {
+    ctx.font = `800 ${size}px ${family}`;
+    if (ctx.measureText(text).width <= maxWidth) return;
+    size -= 2;
+  } while (size >= minSize);
+}
+
+function drawShareCard(state, out) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1200;
+  canvas.height = 630;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas is unavailable');
+
+  const accent = '#e8a33d';
+  const graphite = '#101318';
+  const panel = '#171b20';
+  const ink = '#f1ede4';
+  const muted = '#a6a39a';
+  const line = '#3b424a';
+  const mono = 'ui-monospace, Consolas, monospace';
+  const condensed = '"Arial Narrow", "Roboto Condensed", Impact, sans-serif';
+  const readouts = primaryReadouts(state, out.results);
+
+  ctx.fillStyle = graphite;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = line;
+  ctx.lineWidth = 1;
+  for (let x = 72; x <= 1128; x += 24) {
+    const tick = x % 96 === 72 ? 12 : 6;
+    ctx.beginPath();
+    ctx.moveTo(x, 42);
+    ctx.lineTo(x, 42 + tick);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = accent;
+  ctx.fillRect(72, 72, 34, 34);
+  ctx.fillStyle = graphite;
+  ctx.font = `900 12px ${mono}`;
+  ctx.fillText('SG', 80, 94);
+  ctx.fillStyle = ink;
+  ctx.font = `800 24px ${mono}`;
+  ctx.fillText('SIM GEOMETRY', 124, 98);
+
+  ctx.fillStyle = ink;
+  ctx.font = `900 54px ${condensed}`;
+  ctx.fillText('OWN YOUR VIEW.', 72, 164);
+
+  readouts.forEach((readout, index) => {
+    const x = index === 0 ? 72 : 620;
+    ctx.fillStyle = panel;
+    ctx.fillRect(x, 196, 508, 242);
+    ctx.strokeStyle = line;
+    ctx.strokeRect(x + 0.5, 196.5, 507, 241);
+    ctx.fillStyle = muted;
+    ctx.font = `800 17px ${mono}`;
+    ctx.fillText(readout.label.toUpperCase(), x + 28, 235);
+    ctx.fillStyle = accent;
+    ctx.font = `800 104px ${mono}`;
+    const value = toDegrees(readout.radians).toFixed(1);
+    ctx.fillText(value, x + 24, 354);
+    const valueWidth = ctx.measureText(value).width;
+    ctx.font = `800 28px ${mono}`;
+    ctx.fillText('DEG', x + 34 + valueWidth, 350);
+    ctx.fillStyle = muted;
+    ctx.font = `600 15px ${mono}`;
+    ctx.fillText(index === 0 ? 'PRIMARY PHYSICAL SPAN' : 'SECONDARY PHYSICAL SPAN', x + 28, 404);
+  });
+
+  const rig = shareCardRigSummary(state);
+  ctx.fillStyle = ink;
+  fitCanvasText(ctx, rig, 1056, 24, 16, mono);
+  ctx.fillText(rig, 72, 500);
+  ctx.strokeStyle = accent;
+  ctx.beginPath();
+  ctx.moveTo(72, 530);
+  ctx.lineTo(1128, 530);
+  ctx.stroke();
+  ctx.fillStyle = accent;
+  ctx.font = `800 20px ${mono}`;
+  ctx.fillText('SIMGEOMETRY.COM', 72, 575);
+  ctx.fillStyle = muted;
+  ctx.font = `700 15px ${mono}`;
+  ctx.textAlign = 'right';
+  ctx.fillText('MEASUREMENTS / COMPATIBILITY / COST', 1128, 575);
+  ctx.textAlign = 'left';
+
+  return canvas;
+}
+
+function canvasPng(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error('PNG encoding failed'));
+    }, 'image/png');
+  });
+}
+
+async function copyShareCard() {
+  const state = currentState;
+  const out = currentOutput;
+  const button = $('copy-share-card');
+  if (!button || !state || !out?.ok) return;
+
+  const shareUrl = canonicalShareUrl(state);
+  let copiedPng = false;
+  try {
+    const canvas = drawShareCard(state, out);
+    const png = await canvasPng(canvas);
+    if (currentState !== state || currentOutput !== out) return;
+    if (navigator.clipboard?.write && typeof ClipboardItem === 'function') {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
+      copiedPng = true;
+    }
+  } catch {
+    copiedPng = false;
+  }
+
+  if (!copiedPng) {
+    if (currentState !== state || currentOutput !== out) return;
+    await navigator.clipboard.writeText(shareUrl);
+  }
+
+  button.textContent = copiedPng ? 'Share card copied' : 'Link copied instead';
+  setTimeout(() => { button.textContent = 'Copy share card'; }, 1800);
 }
 
 // ---------- compute paths ----------
@@ -480,7 +712,11 @@ function restoreFromHash() {
 }
 
 function selectGame() {
-  if (!currentState || !currentOutput?.ok) return;
+  if (!currentState || !currentOutput?.ok) {
+    renderPendingGameRecord(gameRecords.get($('game').value));
+    queueEmbedHeight();
+    return;
+  }
   currentState = { ...currentState, game: $('game').value || null };
   renderGameRecord(currentState, currentOutput);
   history.replaceState(null, '', `#${encodeStateV1(currentState)}`);
@@ -534,7 +770,7 @@ export function init() {
   $('copy-link').addEventListener('click', async () => {
     if (!currentState) calculate();
     if (!currentState) return;
-    await navigator.clipboard.writeText(`${location.origin}/tools/fov/#${encodeStateV1(currentState)}`);
+    await navigator.clipboard.writeText(canonicalShareUrl(currentState));
     $('copy-link').textContent = 'Link copied';
     setTimeout(() => { $('copy-link').textContent = 'Copy share link'; }, 1500);
   });
@@ -544,6 +780,8 @@ export function init() {
   $('copy-json').addEventListener('click', async () => {
     await navigator.clipboard.writeText($('actions').dataset.json || '');
   });
+  const shareCardButton = $('copy-share-card');
+  if (shareCardButton) shareCardButton.addEventListener('click', copyShareCard);
   window.addEventListener('hashchange', restoreFromHash);
   syncVisibility();
   syncUnitEchoes();

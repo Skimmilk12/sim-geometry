@@ -1,36 +1,41 @@
-/* Standalone calculator embed: compact, single-column, and chrome-free. */
+/* Standalone calculator embed: compact, chrome-free, and externally isolated. */
 html, body { min-width: 0; }
 body { background: transparent; }
+body::before { display: none; }
 main { padding: 0; }
 
 .embed-root {
   width: 100%;
   min-width: 0;
   margin: 0;
-  padding: 0.75rem;
+  padding: 0.7rem;
   background: var(--bg);
   color: var(--ink);
 }
 
-.embed-header { margin: 0 0 0.75rem; }
-.embed-header h1 { margin: 0; font-size: 1.25rem; }
-.embed-header p { margin: 0.15rem 0 0; color: var(--muted); font-size: 0.85rem; }
+.embed-header { margin: 0 0 0.7rem; }
+.embed-header h1 { margin: 0; font-size: 1.3rem; letter-spacing: -0.025em; }
+.embed-header p:last-child { margin: 0.15rem 0 0; color: var(--muted); font-size: 0.78rem; }
 
+.embed-root .instrument { box-shadow: none; }
 .embed-root .tool-grid,
-.embed-root .field-row {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.embed-root .panel { padding: 0.9rem; }
-.embed-root .results-table th { width: 42%; }
+.embed-root .field-row,
+.embed-root .readout-grid { grid-template-columns: minmax(0, 1fr); }
+.embed-root .setup-panel { border-right: 0; border-bottom: 1px solid var(--line); }
+.embed-root .method-panel { display: none; }
+.embed-root .results-table { table-layout: auto; }
+.embed-root .results-table th { width: 38%; }
 
 .embed-attribution {
-  margin-top: 0.75rem;
-  padding-top: 0.65rem;
+  margin-top: 0.7rem;
+  padding-top: 0.6rem;
   border-top: 1px solid var(--line);
   color: var(--muted);
-  font-size: 0.78rem;
+  font: 0.65rem/1.4 var(--mono);
   text-align: right;
 }
-
 .embed-attribution a { color: var(--muted); }
+
+@media (max-width: 420px) {
+  .embed-root { padding: 0.4rem; }
+}

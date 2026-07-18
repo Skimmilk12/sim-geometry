@@ -38,6 +38,7 @@ test('standalone embed output is isolated and permanently noindex', () => {
   assert.match(html, /<meta name="robots" content="noindex, nofollow">/);
   assert.doesNotMatch(html, /googletagmanager|\bgtag\s*\(/i);
   assert.doesNotMatch(html, /class="sg-(?:top|nav|foot)"/, 'site chrome is absent');
+  assert.doesNotMatch(html, /id="copy-share-card"/, 'embed omits the share-card action');
   assert.match(html, /href="https:\/\/simgeometry\.com\/tools\/fov\/" target="_blank" rel="noopener">Calculated by Sim Geometry<\/a>/);
 
   const absoluteUrls = html.match(/https:\/\/[^\s"'<>]+/g) ?? [];
@@ -45,6 +46,15 @@ test('standalone embed output is isolated and permanently noindex', () => {
   for (const url of absoluteUrls) {
     assert.ok(url.startsWith('https://simgeometry.com/'), `external URL is forbidden: ${url}`);
   }
+});
+
+test('embed light-theme class remains an explicit functional override', () => {
+  const tokens = fs.readFileSync(path.join(ROOT, 'src/css/tokens.css'), 'utf8');
+  const controller = fs.readFileSync(path.join(ROOT, 'src/js/tools/fov-ui.mjs'), 'utf8');
+  assert.match(tokens, /\.theme-light\s*\{/);
+  assert.match(tokens, /\.theme-light\s*\{[\s\S]*?color-scheme:\s*light;/);
+  assert.match(controller, /embedRoot\.classList\.add\(`theme-\$\{theme\}`\)/);
+  assert.match(controller, /\['light', 'dark', 'auto'\]/);
 });
 
 test('embed controller has only the allowlisted fetch and no persistent browser storage', () => {

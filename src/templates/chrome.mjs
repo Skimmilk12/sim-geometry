@@ -7,12 +7,13 @@ const esc = (s) => String(s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;');
 
-function navItem(item, currentPath) {
+function navItem(item, currentPath, index) {
+  const moduleNumber = String(index + 1).padStart(2, '0');
   if (!item.built) {
-    return `<li><span class="soon" aria-disabled="true">${esc(item.label)}<span class="sr-only"> (coming soon)</span></span></li>`;
+    return `<li><span class="soon" aria-disabled="true"><b>${moduleNumber}</b>${esc(item.label)}<span class="sr-only"> (coming soon)</span></span></li>`;
   }
   const current = currentPath === item.href ? ' aria-current="page"' : '';
-  return `<li><a href="${item.href}"${current}>${esc(item.label)}</a></li>`;
+  return `<li><a href="${item.href}"${current}><b>${moduleNumber}</b>${esc(item.label)}</a></li>`;
 }
 
 // Prelaunch can be forced off for production-fixture tests: SG_PRELAUNCH=0
@@ -61,14 +62,15 @@ gtag('config', '${SITE.ga4}');
 <a class="skip-link" href="#main">Skip to main content</a>
 <header class="sg-top">
   <div class="wrap">
-    <a class="sg-brand" href="/">${esc(SITE.brand)}</a>
+    <a class="sg-brand" href="/"><span class="sg-mark" aria-hidden="true">SG</span><span>${esc(SITE.brand)}</span></a>
     <span class="sg-tag">${esc(SITE.tagline)}</span>
+    <span class="sg-calibration" aria-hidden="true"></span>
   </div>
 </header>
 <nav class="sg-nav" aria-label="Primary">
   <div class="wrap">
     <ul>
-${SITE.nav.map((i) => '      ' + navItem(i, page.path)).join('\n')}
+${SITE.nav.map((i, index) => '      ' + navItem(i, page.path, index)).join('\n')}
     </ul>
   </div>
 </nav>
