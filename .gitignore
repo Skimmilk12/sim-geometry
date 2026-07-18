@@ -1,7 +1,13 @@
-﻿node_modules/
+node_modules/
 dist/
 .env
 .env.local
 .DS_Store
 Thumbs.db
 *.log
+
+# Local-only working areas (public repo publishes tracked files verbatim)
+.claude/
+.ai/
+drafts/
+CLAUDE.md

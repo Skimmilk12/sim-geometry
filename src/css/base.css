@@ -1,0 +1,90 @@
+/* Sim Geometry base + chrome. Engineering-paper aesthetic: quiet surfaces,
+   hairline rules, mono numerals. Deliberately distinct from any sibling site. */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.65 var(--sans);
+}
+a { color: var(--grid); text-underline-offset: 2px; }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: 2px solid var(--grid); outline-offset: 2px; border-radius: 2px; }
+code, .num, td[data-num] { font-family: var(--mono); font-size: 0.95em; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px;
+  padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 1.25rem; }
+.copy { max-width: var(--copy); }
+
+/* ---------- chrome: header ---------- */
+.sg-top {
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.sg-top .wrap {
+  display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap;
+  padding-top: 0.9rem; padding-bottom: 0.7rem;
+}
+.sg-brand {
+  font-family: var(--mono);
+  font-weight: 700; letter-spacing: 0.08em;
+  font-size: 1.05rem; color: var(--ink); text-decoration: none;
+}
+.sg-brand:hover { color: var(--grid); }
+.sg-tag {
+  color: var(--muted); font-size: 0.8rem; letter-spacing: 0.04em;
+  font-family: var(--mono);
+}
+
+.sg-nav {
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.sg-nav ul {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; gap: 0.25rem;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.sg-nav a, .sg-nav .soon {
+  display: block; padding: 0.55rem 0.7rem;
+  font-size: 0.85rem; letter-spacing: 0.03em;
+  text-decoration: none; white-space: nowrap;
+}
+.sg-nav a { color: var(--ink); border-bottom: 2px solid transparent; }
+.sg-nav a:hover { color: var(--grid); }
+.sg-nav a[aria-current="page"] { color: var(--grid); border-bottom-color: var(--grid); }
+.sg-nav .soon { color: var(--muted); cursor: default; }
+.sg-nav .soon::after {
+  content: "soon"; margin-left: 0.35rem;
+  font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.06em;
+  color: var(--muted); border: 1px solid var(--line-strong);
+  border-radius: 999px; padding: 0.05rem 0.35rem; vertical-align: 1px;
+}
+
+/* ---------- main ---------- */
+main { padding: 2.25rem 0 3rem; }
+h1 { font-size: 1.85rem; line-height: 1.25; margin: 0 0 0.5rem; letter-spacing: -0.01em; }
+h2 { font-size: 1.3rem; margin: 2rem 0 0.5rem; }
+.dek { color: var(--muted); font-size: 1.05rem; margin: 0 0 1.5rem; max-width: var(--copy); }
+
+.panel {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r); padding: 1.1rem 1.25rem;
+}
+.panel + .panel { margin-top: var(--gap); }
+
+/* ---------- footer ---------- */
+.sg-foot {
+  border-top: 1px solid var(--line);
+  color: var(--muted); font-size: 0.82rem;
+  background: var(--surface);
+}
+.sg-foot .wrap { padding-top: 1.25rem; padding-bottom: 1.75rem; }
+.sg-foot nav { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+.sg-foot a { color: var(--muted); }
+.sg-foot a:hover { color: var(--grid); }
+.sg-foot .credo { font-family: var(--mono); letter-spacing: 0.02em; }
