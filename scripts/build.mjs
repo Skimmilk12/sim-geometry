@@ -29,6 +29,7 @@ for (const page of PAGES) {
 const copies = [
   ['src/css', 'styles'],
   ['src/js', 'js'],
+  ['src/data', 'data'],
   ['public', '.'],
 ];
 const copyWrites = [];   // { from, dest }
