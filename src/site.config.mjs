@@ -6,7 +6,8 @@ export const SITE = {
   tagline: 'measurements · compatibility · cost',
   credo: 'Measurements, compatibility, and cost — without invented experience.',
   org: 'Sim Geometry Research Desk',
-  // Flip to the custom domain at launch (also drop prelaunch).
+  // Custom-domain canonical is intentional during prelaunch; at launch,
+  // configure DNS/CNAME and set prelaunch: false. base itself doesn't change.
   base: 'https://simgeometry.com',
   // While true: every page carries noindex and no sitemap is generated,
   // so the interim github.io deployment never gets indexed as a duplicate.

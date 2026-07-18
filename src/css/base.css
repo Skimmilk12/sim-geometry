@@ -16,6 +16,12 @@ code, .num, td[data-num] { font-family: var(--mono); font-size: 0.95em; }
   position: absolute; width: 1px; height: 1px; margin: -1px;
   padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
+.skip-link {
+  position: absolute; left: -9999px; top: 0; z-index: 10;
+  background: var(--surface); color: var(--grid);
+  padding: 0.5rem 0.9rem; border: 1px solid var(--line-strong); border-radius: var(--r);
+}
+.skip-link:focus { left: 0.5rem; top: 0.5rem; }
 
 .wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 1.25rem; }
 .copy { max-width: var(--copy); }
@@ -57,7 +63,9 @@ code, .num, td[data-num] { font-family: var(--mono); font-size: 0.95em; }
 .sg-nav a { color: var(--ink); border-bottom: 2px solid transparent; }
 .sg-nav a:hover { color: var(--grid); }
 .sg-nav a[aria-current="page"] { color: var(--grid); border-bottom-color: var(--grid); }
-.sg-nav .soon { color: var(--muted); cursor: default; }
+/* position:relative so absolutely-positioned .sr-only children anchor here and
+   stay inside the nav's scroll clipping instead of widening the page */
+.sg-nav .soon { color: var(--muted); cursor: default; position: relative; }
 .sg-nav .soon::after {
   content: "soon"; margin-left: 0.35rem;
   font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.06em;
@@ -76,6 +84,7 @@ h2 { font-size: 1.3rem; margin: 2rem 0 0.5rem; }
   border-radius: var(--r); padding: 1.1rem 1.25rem;
 }
 .panel + .panel { margin-top: var(--gap); }
+.panel > :first-child { margin-top: 0; }
 
 /* ---------- footer ---------- */
 .sg-foot {

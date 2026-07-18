@@ -7,9 +7,18 @@ const esc = (s) => String(s)
   .replace(/"/g, '&quot;');
 
 function navItem(item, currentPath) {
-  if (!item.built) return `<li><span class="soon">${esc(item.label)}</span></li>`;
+  if (!item.built) {
+    return `<li><span class="soon" aria-disabled="true">${esc(item.label)}<span class="sr-only"> (coming soon)</span></span></li>`;
+  }
   const current = currentPath === item.href ? ' aria-current="page"' : '';
   return `<li><a href="${item.href}"${current}>${esc(item.label)}</a></li>`;
+}
+
+// Prelaunch can be forced off for production-fixture tests: SG_PRELAUNCH=0
+function isPrelaunch() {
+  if (process.env.SG_PRELAUNCH === '0') return false;
+  if (process.env.SG_PRELAUNCH === '1') return true;
+  return SITE.prelaunch;
 }
 
 /**
@@ -22,7 +31,7 @@ export function renderPage(page) {
   const title = page.path === '/'
     ? `${SITE.name} — ${SITE.tagline.replaceAll(' · ', ', ')}`
     : `${page.title} — ${SITE.name}`;
-  const robots = SITE.prelaunch ? 'noindex, nofollow' : (page.robots || 'index, follow');
+  const robots = isPrelaunch() ? 'noindex, nofollow' : (page.robots || 'index, follow');
   const canonical = SITE.base.replace(/\/$/, '') + page.path;
 
   return `<!doctype html>
@@ -38,6 +47,7 @@ export function renderPage(page) {
 <link rel="stylesheet" href="/styles/base.css">
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to main content</a>
 <header class="sg-top">
   <div class="wrap">
     <a class="sg-brand" href="/">${esc(SITE.brand)}</a>
@@ -51,7 +61,7 @@ ${SITE.nav.map((i) => '      ' + navItem(i, page.path)).join('\n')}
     </ul>
   </div>
 </nav>
-<main>
+<main id="main">
   <div class="wrap">
 ${page.body}
   </div>

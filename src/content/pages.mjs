@@ -13,7 +13,7 @@ export const PAGES = [
     verify — not opinions about feel.</p>
 
     <div class="panel copy">
-      <h2 style="margin-top:0">What's being built here</h2>
+      <h2>What's being built here</h2>
       <p><strong>The Geometry Lab</strong> — a field-of-view and monitor calculator built
       for trust: every per-game recommendation carries its source and the date it was last
       verified, every result has a shareable URL that reproduces it exactly, and the math

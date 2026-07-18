@@ -1,4 +1,5 @@
 // Minimal static server for local preview of dist/. Node stdlib only.
+// Loopback-only; containment enforced with path.relative, not string prefixes.
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -15,15 +16,29 @@ const MIME = {
 };
 
 http.createServer((req, res) => {
-  const url = decodeURIComponent(new URL(req.url, 'http://x').pathname);
-  let file = path.join(ROOT, url);
-  if (!path.resolve(file).startsWith(ROOT)) { res.writeHead(403).end(); return; }
-  if (url.endsWith('/')) file = path.join(file, 'index.html');
-  if (!fs.existsSync(file) && fs.existsSync(file + '/index.html')) file = file + '/index.html';
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    res.writeHead(405, { allow: 'GET, HEAD' }).end();
+    return;
+  }
+  let urlPath;
+  try {
+    urlPath = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+  } catch {
+    res.writeHead(400, { 'content-type': 'text/plain' }).end('bad request');
+    return;
+  }
+  let file = path.resolve(ROOT, '.' + urlPath.replaceAll('\\', '/'));
+  const rel = path.relative(ROOT, file);
+  if (rel.startsWith('..') || path.isAbsolute(rel)) {
+    res.writeHead(403, { 'content-type': 'text/plain' }).end('forbidden');
+    return;
+  }
+  if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
   if (!fs.existsSync(file) || !fs.statSync(file).isFile()) {
     res.writeHead(404, { 'content-type': 'text/plain' }).end('404');
     return;
   }
   res.writeHead(200, { 'content-type': MIME[path.extname(file)] || 'application/octet-stream' });
+  if (req.method === 'HEAD') { res.end(); return; }
   fs.createReadStream(file).pipe(res);
-}).listen(PORT, () => console.log(`serving dist/ on http://localhost:${PORT}`));
+}).listen(PORT, '127.0.0.1', () => console.log(`serving dist/ on http://localhost:${PORT}`));

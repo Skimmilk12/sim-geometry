@@ -18,8 +18,11 @@ function hashTree(dir) {
     .sort();
   const h = crypto.createHash('sha256');
   for (const f of entries) {
-    h.update(path.relative(dir, f).replaceAll('\\', '/'));
-    h.update(fs.readFileSync(f));
+    const rel = path.relative(dir, f).replaceAll('\\', '/');
+    const body = fs.readFileSync(f);
+    // length-prefix both fields so path/content concatenation is unambiguous
+    h.update(`${rel.length}:${rel}|${body.length}:`);
+    h.update(body);
   }
   return { digest: h.digest('hex'), count: entries.length };
 }
