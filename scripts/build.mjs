@@ -1,7 +1,8 @@
 // Deterministic src -> dist build. Node stdlib only. Same src tree must always
 // produce a byte-identical dist tree (no timestamps, no randomness).
-// Safety: BUILD_OUT is allowlisted before deletion; every output destination is
-// claimed in a manifest so nothing can silently overwrite anything else.
+// Safety: BUILD_OUT is allowlisted before any deletion; the COMPLETE output
+// manifest (pages + copies) is validated BEFORE dist is touched, so a failing
+// build never destroys the previous output.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -16,27 +17,21 @@ const { SITE } = await import(pathToFileURL(path.join(ROOT, 'src/site.config.mjs
 
 validateNav(SITE, PAGES);
 
-fs.rmSync(OUT, { recursive: true, force: true });
-fs.mkdirSync(OUT, { recursive: true });
-
+// ---------- phase 1: preflight — render + plan every output, no writes ----------
 const manifest = new Manifest();
-
-let pages = 0;
+const pageWrites = [];   // { file, html }
 for (const page of PAGES) {
   const file = pageOutputFile(OUT, page.path);
   manifest.claim(path.relative(OUT, file), `page ${page.path}`);
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, renderPage(page));
-  pages++;
+  pageWrites.push({ file, html: renderPage(page) });
 }
 
-// static passthroughs — copied file-by-file so every destination is manifest-checked
 const copies = [
   ['src/css', 'styles'],
   ['src/js', 'js'],
   ['public', '.'],
 ];
-let files = 0;
+const copyWrites = [];   // { from, dest }
 for (const [from, to] of copies) {
   const srcDir = path.join(ROOT, from);
   if (!fs.existsSync(srcDir)) continue;
@@ -45,15 +40,22 @@ for (const [from, to] of copies) {
     const abs = path.join(e.parentPath ?? e.path, e.name);
     const rel = path.join(to, path.relative(srcDir, abs));
     manifest.claim(rel, `copy ${from}`);
-    const dest = path.join(OUT, rel);
-    fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.copyFileSync(abs, dest);
-    files++;
+    copyWrites.push({ from: abs, dest: path.join(OUT, rel) });
   }
 }
-
-// GitHub Pages must serve dist verbatim
 manifest.claim('.nojekyll', 'build');
+
+// ---------- phase 2: validated — now (and only now) replace the output ----------
+fs.rmSync(OUT, { recursive: true, force: true });
+fs.mkdirSync(OUT, { recursive: true });
+for (const { file, html } of pageWrites) {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, html);
+}
+for (const { from, dest } of copyWrites) {
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.copyFileSync(from, dest);
+}
 fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
 
-console.log(`build: ${pages} pages, ${files} static files, ${manifest.size()} outputs -> ${path.relative(ROOT, OUT) || OUT}`);
+console.log(`build: ${pageWrites.length} pages, ${copyWrites.length} static files, ${manifest.size()} outputs -> ${path.relative(ROOT, OUT) || OUT}`);

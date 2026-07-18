@@ -42,15 +42,29 @@ export function pageOutputFile(outDir, pagePath) {
   return file;
 }
 
-/** Tracks every destination the build writes; duplicate destinations are a build error. */
+/**
+ * Tracks every destination the build writes; duplicate destinations are a
+ * build error. Collision detection is BOTH exact and case-folded (NFC +
+ * lowercase): on Windows/macOS `Index.html` and `index.html` are the same
+ * file, and a Linux CI would silently emit two — either way it's a bug.
+ * Uppercase itself is allowed (CNAME is conventional).
+ */
 export class Manifest {
-  constructor() { this.map = new Map(); }
+  constructor() { this.map = new Map(); this.folded = new Map(); }
   claim(destRelPath, source) {
     const key = destRelPath.replaceAll('\\', '/');
+    const fold = key.normalize('NFC').toLowerCase();
     if (this.map.has(key)) {
       throw new Error(`output collision: ${key} written by both "${this.map.get(key)}" and "${source}"`);
     }
+    if (this.folded.has(fold)) {
+      const [prevKey, prevSource] = this.folded.get(fold);
+      throw new Error(
+        `output collision (case-insensitive): ${key} ("${source}") vs ${prevKey} ("${prevSource}") — same file on Windows/macOS`,
+      );
+    }
     this.map.set(key, source);
+    this.folded.set(fold, [key, source]);
   }
   size() { return this.map.size; }
 }

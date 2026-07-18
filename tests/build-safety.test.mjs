@@ -43,12 +43,15 @@ test('page output files can never escape the output directory', () => {
   assert.throws(() => pageOutputFile(out, '/../escape/'), RangeError);
 });
 
-test('manifest refuses duplicate destinations', () => {
+test('manifest refuses duplicate destinations, exact and case-folded', () => {
   const m = new Manifest();
   m.claim('index.html', 'page /');
   m.claim('styles/base.css', 'copy src/css');
+  m.claim('CNAME', 'copy public'); // uppercase alone is fine
   assert.throws(() => m.claim('index.html', 'copy public'), /output collision/);
   assert.throws(() => m.claim('styles\\base.css', 'copy public'), /output collision/, 'separator-insensitive');
+  assert.throws(() => m.claim('Index.html', 'copy public'), /case-insensitive/, 'case-folded');
+  assert.throws(() => m.claim('cname', 'page /cname/'), /case-insensitive/, 'case-folded reverse');
 });
 
 test('nav validation: built:true must resolve to a registered page; duplicates refused', () => {

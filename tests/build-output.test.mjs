@@ -54,17 +54,70 @@ test('production fixture: noindex disappears, canonical paths unchanged', () => 
   }
 });
 
-test('a public/ file colliding with a generated page fails the build', () => {
-  const publicDir = path.join(ROOT, 'public');
-  const existed = fs.existsSync(publicDir);
-  const probe = path.join(publicDir, 'index.html');
-  assert.ok(!fs.existsSync(probe), 'precondition: no real public/index.html');
-  fs.mkdirSync(publicDir, { recursive: true });
-  fs.writeFileSync(probe, 'colliding file');
+// Collision tests run against an ISOLATED copy of the repo in the tmpdir, so
+// nothing mutates the real working tree and parallel test files can't observe
+// a planted collision (Codex finding, Exchange 23).
+function isolatedFixture(mutate) {
+  const fix = fs.mkdtempSync(path.join(os.tmpdir(), 'sg-fixture-'));
+  for (const dir of ['scripts', 'src']) {
+    fs.cpSync(path.join(ROOT, dir), path.join(fix, dir), { recursive: true });
+  }
+  mutate(fix);
+  return fix;
+}
+
+function buildIn(fixtureRoot) {
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'sg-build-'));
+  execFileSync(process.execPath, [path.join(fixtureRoot, 'scripts/build.mjs')], {
+    env: { ...process.env, BUILD_OUT: out },
+  });
+  return out;
+}
+
+test('a public/ file colliding with a generated page fails the build (isolated fixture)', () => {
+  const fix = isolatedFixture((root) => {
+    fs.mkdirSync(path.join(root, 'public'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'public', 'index.html'), 'colliding file');
+  });
   try {
-    assert.throws(() => build(), /output collision/);
+    assert.throws(() => buildIn(fix), /output collision/);
   } finally {
-    fs.rmSync(probe);
-    if (!existed) fs.rmSync(publicDir, { recursive: true, force: true });
+    fs.rmSync(fix, { recursive: true, force: true });
+  }
+});
+
+test('a case-folded collision (public/Index.html) also fails the build', () => {
+  const fix = isolatedFixture((root) => {
+    fs.mkdirSync(path.join(root, 'public'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'public', 'Index.html'), 'case-folded collision');
+  });
+  try {
+    assert.throws(() => buildIn(fix), /output collision \(case-insensitive\)/);
+  } finally {
+    fs.rmSync(fix, { recursive: true, force: true });
+  }
+});
+
+test('a failing preflight leaves the previous output untouched', () => {
+  const fix = isolatedFixture(() => {});
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'sg-build-'));
+  try {
+    // first, a good build into out
+    execFileSync(process.execPath, [path.join(fix, 'scripts/build.mjs')], {
+      env: { ...process.env, BUILD_OUT: out },
+    });
+    const before = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
+    // now plant a collision and rebuild into the SAME out — must fail in
+    // preflight and leave the previous output intact
+    fs.mkdirSync(path.join(fix, 'public'), { recursive: true });
+    fs.writeFileSync(path.join(fix, 'public', 'index.html'), 'boom');
+    assert.throws(() => execFileSync(process.execPath, [path.join(fix, 'scripts/build.mjs')], {
+      env: { ...process.env, BUILD_OUT: out },
+    }));
+    assert.equal(fs.readFileSync(path.join(out, 'index.html'), 'utf8'), before,
+      'previous output preserved after failed preflight');
+  } finally {
+    fs.rmSync(fix, { recursive: true, force: true });
+    fs.rmSync(out, { recursive: true, force: true });
   }
 });
