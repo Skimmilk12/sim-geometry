@@ -20,18 +20,19 @@ const EPS = 1e-9;
 // angle from straight-ahead (+y), positive to the right
 const ang = (p) => Math.atan2(p.x, p.y);
 
+/** The method identifier exposed alongside every yaw recommendation. */
+export const YAW_METHOD = 'flat-chord-tangent';
+
 /**
- * Recommended side-monitor yaw: the CHORD-TANGENT rule — the angle that puts
- * each side panel's chord tangent to the viewing circle, equal to the angular
- * width one full flat cabinet (active + both bezels) would subtend at the eye:
- *   yaw = 2·atan(cabinet / 2D)
- * The same rule is applied to curved panels (on the chord). Panel curvature
- * changes the SPANS, not this mounting recommendation — a curved panel has no
- * exact tangent solution unless R equals the viewing distance, so the chord
- * rule is the documented v1 assumption (refined with sources in B5).
+ * Nominal side-monitor yaw by the CHORD-TANGENT CONVENTION (not an exact
+ * curved-panel tangency — none exists without choosing an objective): the
+ * angle one full flat cabinet (active + both bezels) subtends at the eye,
+ *   yaw = 2·atan(cabinet / 2D),
+ * applied to curved panels on the chord. Curvature changes the SPANS, not
+ * this mounting convention (documented assumption; refined with sources in B5).
  * Throws GeometryError('NO_TANGENT_SOLUTION') when no yaw <= 90° exists.
  */
-export function recommendedYawRad({ activeMm, bezelPerSideMm, eyeDistanceMm }) {
+export function nominalChordYawRad({ activeMm, bezelPerSideMm, eyeDistanceMm }) {
   assertPositive('activeMm', activeMm);
   assertNonNegative('bezelPerSideMm', bezelPerSideMm);
   assertPositive('eyeDistanceMm', eyeDistanceMm);
@@ -118,16 +119,54 @@ export function tripleLayout({ activeMm, bezelPerSideMm, eyeDistanceMm, yawFromC
     sideInner = place(-phiV);
     sideOuter = place(+phiV);
     centerSpanRad = curvedPhysicalSpan(activeMm, radiusMm, D).spanRad;
-  }
 
-  // Postconditions: physically meaningful layout or a structured error.
-  for (const [name, p] of [['center edge', centerR], ['side inner edge', sideInner], ['side outer edge', sideOuter]]) {
-    if (p.y <= 0) {
-      throw new GeometryError('IMPOSSIBLE_GEOMETRY', `${name} reaches the eye plane`, 'yawFromCoplanarRad');
+    // Monotonicity guard (gate Exchange 24): the side arc's maximum viewing
+    // angle can sit at an INTERIOR point when the eye lies OUTSIDE the arc's
+    // circle (only possible for tight radii at long distances). The arc lies
+    // on a circle centered at Cw = hinge + rot(R·sin(phiC), −R·cos(phiC)).
+    // Viewing-angle extrema occur where the sight ray is tangent:
+    //   Cx·sin(alpha) + Cy·cos(alpha) = −R, alpha = psi + yaw,
+    // solvable only when |C| ≥ R. Reject rather than under-report the span.
+    const cw = (() => {
+      const l = rot({ x: radiusMm * Math.sin(phiC), y: -radiusMm * Math.cos(phiC) });
+      return { x: hinge.x + l.x, y: hinge.y + l.y };
+    })();
+    const cMag = Math.hypot(cw.x, cw.y);
+    if (cMag > radiusMm) {
+      const gamma = Math.atan2(cw.x, cw.y);
+      const acos = Math.acos(-radiusMm / cMag);
+      for (const alpha of [gamma + acos, gamma - acos]) {
+        for (const wrap of [0, 2 * Math.PI, -2 * Math.PI]) {
+          const psi = alpha + wrap - th;
+          if (psi > -phiV + EPS && psi < phiV - EPS) {
+            throw new GeometryError(
+              'NON_MONOTONIC_ARC',
+              'the side panel arc reaches its maximum viewing angle at an interior point; endpoint spans would under-report this rig',
+              'radiusMm',
+            );
+          }
+        }
+      }
     }
   }
+
+  const warnings = [];
+
+  // Hard errors: geometrically undefined or folded layouts.
   if (sideOuter.x <= 0) {
     throw new GeometryError('IMPOSSIBLE_GEOMETRY', 'side panel folds across the centerline', 'yawFromCoplanarRad');
+  }
+  if (centerR.y <= 0) {
+    throw new GeometryError('IMPOSSIBLE_GEOMETRY', 'center panel reaches the eye plane', 'eyeDistanceMm');
+  }
+
+  // Degraded-but-defined layouts: report with a warning (gate Exchange 24
+  // ruling), never a global refusal — the numbers are still the numbers.
+  if (sideOuter.y <= 0 || sideInner.y <= 0) {
+    warnings.push({
+      code: 'WRAPS_BEHIND_EYE',
+      message: 'side panels wrap past the eye plane (envelope exceeds 180°); physically defined but unsuitable for standard game projection',
+    });
   }
 
   const visibleEnvelopeRad = 2 * ang(sideOuter);
@@ -153,6 +192,7 @@ export function tripleLayout({ activeMm, bezelPerSideMm, eyeDistanceMm, yawFromC
     activeImageCoverageRad,
     seamOcclusionPerSideRad,
     centerSpanRad,
+    warnings,
   };
 }
 

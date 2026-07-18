@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -98,24 +99,37 @@ test('a case-folded collision (public/Index.html) also fails the build', () => {
   }
 });
 
-test('a failing preflight leaves the previous output untouched', () => {
+test('a failing preflight leaves the previous output tree byte-identical', () => {
   const fix = isolatedFixture(() => {});
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'sg-build-'));
+  const hashTree = (dir) => {
+    const crypto = createHash('sha256');
+    const files = fs.readdirSync(dir, { recursive: true, withFileTypes: true })
+      .filter((e) => e.isFile())
+      .map((e) => path.join(e.parentPath ?? e.path, e.name))
+      .sort();
+    for (const f of files) {
+      const rel = path.relative(dir, f).replaceAll('\\', '/');
+      const body = fs.readFileSync(f);
+      crypto.update(`${rel.length}:${rel}|${body.length}:`);
+      crypto.update(body);
+    }
+    return crypto.digest('hex');
+  };
   try {
     // first, a good build into out
     execFileSync(process.execPath, [path.join(fix, 'scripts/build.mjs')], {
       env: { ...process.env, BUILD_OUT: out },
     });
-    const before = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
+    const before = hashTree(out);
     // now plant a collision and rebuild into the SAME out — must fail in
-    // preflight and leave the previous output intact
+    // preflight and leave the ENTIRE previous tree intact
     fs.mkdirSync(path.join(fix, 'public'), { recursive: true });
     fs.writeFileSync(path.join(fix, 'public', 'index.html'), 'boom');
     assert.throws(() => execFileSync(process.execPath, [path.join(fix, 'scripts/build.mjs')], {
       env: { ...process.env, BUILD_OUT: out },
     }));
-    assert.equal(fs.readFileSync(path.join(out, 'index.html'), 'utf8'), before,
-      'previous output preserved after failed preflight');
+    assert.equal(hashTree(out), before, 'entire previous output tree preserved after failed preflight');
   } finally {
     fs.rmSync(fix, { recursive: true, force: true });
     fs.rmSync(out, { recursive: true, force: true });

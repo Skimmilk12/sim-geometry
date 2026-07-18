@@ -2,13 +2,21 @@
 // embed (B6) both call. Pure and versioned: same input object always produces
 // the same output object. Millimetres in, radians out; degree formatting is
 // the caller's presentation concern.
-import { GeometryError } from './errors.mjs';
+//
+// Contract (gate Exchange 24):
+// - Degraded-but-defined layouts return ok:true with `warnings[]`
+//   (e.g. WRAPS_BEHIND_EYE). Hard ok:false is reserved for undefined,
+//   folded, or non-monotonic geometry and invalid input.
+// - Sensitivity endpoints are probed independently: an endpoint that crosses
+//   a validity boundary reports a structured `unavailable` without erasing
+//   the central result.
+import { GeometryError, assertPositiveInteger } from './errors.mjs';
 import {
   panelFromDiagonal, flatHorizontalFov, flatVerticalFov, curvedPhysicalSpan,
-  eyeDistanceSensitivity, pixelsPerDegree,
+  pixelsPerDegree,
 } from './fov.mjs';
 import {
-  recommendedYawRad, tripleLayout, seamGapMm, seamHiddenPixels,
+  nominalChordYawRad, YAW_METHOD, tripleLayout, seamGapMm, seamHiddenPixels,
   equivalentBezelCorrectedSpanPixels,
 } from './triples.mjs';
 
@@ -19,7 +27,10 @@ const A = {
   PHYSICAL: 'physical-span-not-a-game-fov-setting',
   BEZEL_CHORD: 'bezel-measured-as-chord-extension',
   VERTICAL_CENTER_PLANE: 'vertical-span-computed-at-panel-center-plane',
+  YAW_METHOD: `yaw-recommendation-${YAW_METHOD}`,
 };
+
+const SENS_DELTA_MM = 10;
 
 function fail(err) {
   if (err instanceof GeometryError) {
@@ -30,6 +41,25 @@ function fail(err) {
 const invalid = (message, field) => (
   { ok: false, error: { code: 'INVALID_INPUT', message, field } }
 );
+
+// Probe one sensitivity endpoint independently of the central result.
+function probe(fn, distanceMm) {
+  try {
+    return { rad: fn(distanceMm) };
+  } catch (err) {
+    if (err instanceof GeometryError) {
+      return { rad: null, unavailable: { code: err.code, message: err.message } };
+    }
+    throw err;
+  }
+}
+function sensitivityBand(fn, eyeDistanceMm) {
+  return {
+    deltaMm: SENS_DELTA_MM,
+    near: probe(fn, eyeDistanceMm - SENS_DELTA_MM),
+    far: probe(fn, eyeDistanceMm + SENS_DELTA_MM),
+  };
+}
 
 /**
  * input = {
@@ -49,6 +79,10 @@ export function calculateGeometryV1(input) {
       return invalid(`layout must be 'single' or 'triple', got ${JSON.stringify(layout)}`, 'layout');
     }
     if (!screen || typeof screen !== 'object') return invalid('screen is required', 'screen');
+    if (resolution !== null) {
+      assertPositiveInteger('resolution.horizontal', resolution.horizontal);
+      assertPositiveInteger('resolution.vertical', resolution.vertical);
+    }
 
     // normalize panel size
     let widthMm; let heightMm;
@@ -79,7 +113,7 @@ export function calculateGeometryV1(input) {
       } else {
         horizontalSpanRad = flatHorizontalFov(widthMm, eyeDistanceMm);
       }
-      const sens = eyeDistanceSensitivity(
+      const sens = sensitivityBand(
         (d) => (curved ? curvedPhysicalSpan(widthMm, curveRadiusMm, d).spanRad : flatHorizontalFov(widthMm, d)),
         eyeDistanceMm,
       );
@@ -93,6 +127,7 @@ export function calculateGeometryV1(input) {
           pixelsPerDegree: resolution ? pixelsPerDegree(resolution.horizontal, horizontalSpanRad) : null,
           sensitivity: sens,
         },
+        warnings: [],
         assumptions,
       };
     }
@@ -100,18 +135,18 @@ export function calculateGeometryV1(input) {
     // triple
     const t = input.triple;
     if (!t || typeof t !== 'object') return invalid('triple options are required for layout "triple"', 'triple');
-    assumptions.push(A.BEZEL_CHORD);
+    assumptions.push(A.BEZEL_CHORD, A.YAW_METHOD);
     const base = {
       activeMm: widthMm,
       bezelPerSideMm: t.bezelPerSideMm,
       eyeDistanceMm,
       radiusMm: curveRadiusMm,
     };
-    const recYaw = recommendedYawRad(base);
-    const requestedYawRad = t.yawFromCoplanarRad === 'recommended' ? recYaw : t.yawFromCoplanarRad;
+    const nominalYawRad = nominalChordYawRad(base);
+    const requestedYawRad = t.yawFromCoplanarRad === 'recommended' ? nominalYawRad : t.yawFromCoplanarRad;
     const layoutResult = tripleLayout({ ...base, yawFromCoplanarRad: requestedYawRad });
     const seamMm = seamGapMm(t.bezelPerSideMm);
-    const sens = eyeDistanceSensitivity(
+    const sens = sensitivityBand(
       (d) => tripleLayout({ ...base, eyeDistanceMm: d, yawFromCoplanarRad: requestedYawRad }).visibleEnvelopeRad,
       eyeDistanceMm,
     );
@@ -127,9 +162,9 @@ export function calculateGeometryV1(input) {
         seamOcclusionPerSideRad: layoutResult.seamOcclusionPerSideRad,
         centerSpanRad: layoutResult.centerSpanRad,
         verticalSpanRad,
-        recommendedYawRad: recYaw,
+        nominalYaw: { rad: nominalYawRad, method: YAW_METHOD },
         requestedYawRad,
-        yawDeltaRad: requestedYawRad - recYaw,
+        yawDeltaFromNominalRad: requestedYawRad - nominalYawRad,
         seamGapMm: seamMm,
         seamHiddenPixels: resolution ? seamHiddenPixels(seamMm, widthMm, resolution.horizontal) : null,
         equivalentSpan: resolution
@@ -140,6 +175,7 @@ export function calculateGeometryV1(input) {
           : null,
         sensitivity: sens,
       },
+      warnings: layoutResult.warnings,
       assumptions,
     };
   } catch (err) {
