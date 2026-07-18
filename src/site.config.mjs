@@ -17,16 +17,13 @@ export const SITE = {
   prelaunch: true,
   nav: [
     { label: 'Geometry', href: '/tools/fov/', built: true },
-    { label: 'Wheelbases', href: '/wheelbases/', built: false },
-    { label: 'Upgrade Planner', href: '/tools/upgrade-planner/', built: false },
-    { label: 'Guides', href: '/guides/', built: false },
-    { label: 'Data & Method', href: '/methodology/', built: false },
+    { label: 'Guides', href: '/guides/', built: true },
+    { label: 'Data & Method', href: '/methodology/', built: true },
   ],
   footNav: [
-    { label: 'About', href: '/about/', built: false },
-    { label: 'Methodology', href: '/methodology/', built: false },
-    { label: 'Changelog', href: '/changelog/', built: false },
-    { label: 'Disclosure', href: '/disclosure/', built: false },
-    { label: 'Privacy', href: '/privacy/', built: false },
+    { label: 'About', href: '/about/', built: true },
+    { label: 'Guides', href: '/guides/', built: true },
+    { label: 'Privacy', href: '/privacy/', built: true },
+    { label: 'Methodology', href: '/methodology/', built: true, quiet: true },
   ],
 };

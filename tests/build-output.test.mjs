@@ -9,6 +9,8 @@ import path from 'node:path';
 import os from 'node:os';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { GUIDES } from '../src/content/guides.mjs';
+import { SITE } from '../src/site.config.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -31,21 +33,36 @@ test('prelaunch build: robots noindex, canonical, stylesheets, .nojekyll, skip l
     assert.match(home, /class="skip-link" href="#main"/);
     assert.match(home, /<main id="main">/);
     assert.equal((home.match(/id="fov-form"/g) ?? []).length, 1, 'homepage contains one calculator form');
-    assert.equal((home.match(/class="research-card"/g) ?? []).length, 3, 'homepage contains exactly three research cards');
-    assert.match(home, /Direct-Drive Value Lab/);
-    assert.match(home, /Console-Safe Upgrade Planner/);
-    assert.match(home, /Open CC BY Dataset/);
+    assert.doesNotMatch(home, /class="research-card"|Direct-Drive Value Lab|Console-Safe Upgrade Planner|Open CC BY Dataset/,
+      'homepage omits the unbuilt research roadmap');
+    assert.doesNotMatch(home, /class="data-method"|id="data-method-title"/,
+      'homepage omits the former Data & Method section');
+    assert.equal((home.match(/class="home-guide-link"/g) ?? []).length, 6,
+      'homepage contains six benefit-titled guide links');
+    for (const guide of GUIDES) {
+      assert.match(home, new RegExp(`href="/guides/${guide.slug}/"`),
+        `homepage links ${guide.slug}`);
+    }
     assert.match(home, /id="copy-share-card"/, 'homepage calculator includes the share-card action');
     assert.match(home, /href="\/styles\/tool\.css"/, 'homepage carries the shared calculator styling');
     assert.match(home, /src="\/js\/tools\/fov-ui\.mjs"/, 'homepage carries the shared calculator controller');
     const tool = fs.readFileSync(path.join(out, 'tools/fov/index.html'), 'utf8');
     const metaDescription = (html) => html.match(/<meta name="description" content="([^"]+)">/)[1];
     assert.notEqual(metaDescription(home), metaDescription(tool), 'home and canonical tool descriptions stay distinct');
-    assert.match(home, /<h1>Own your view\./);
-    assert.match(tool, /<h1>Field-of-view geometry, exposed\./);
+    assert.match(home, /<h1>Get the right view for your rig\.<\/h1>/);
+    assert.match(tool, /<h1>Get the FOV your rig actually covers\.<\/h1>/);
     assert.ok(fs.existsSync(path.join(out, '.nojekyll')), '.nojekyll present');
     assert.ok(fs.existsSync(path.join(out, 'styles/base.css')), 'css copied');
-    assert.match(home, /aria-disabled="true"/, 'soon items are marked disabled');
+    assert.doesNotMatch(home, /aria-disabled="true"|Wheelbases|Upgrade Planner/,
+      'chrome contains no unbuilt roadmap links');
+    const footer = home.match(/<footer class="sg-foot">([\s\S]*?)<\/footer>/)?.[1] ?? '';
+    assert.equal((footer.match(/<a(?: class="quiet")? href=/g) ?? []).length, 4,
+      'footer contains four utility links');
+    for (const label of ['About', 'Guides', 'Privacy', 'Methodology']) assert.match(footer, new RegExp(`>${label}<`));
+    assert.doesNotMatch(footer, new RegExp(SITE.credo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+      'credo is absent from site chrome');
+    assert.doesNotMatch(footer, /Every number on this site|We do not review hardware/,
+      'footer contains no publisher-process prose');
     assert.doesNotMatch(home, /style="/, 'no inline styles in generated pages');
     assert.match(home, /googletagmanager\.com\/gtag\/js\?id=G-MPKRBBQCHF/, 'GA4 stream wired');
     // mojibake guard: UTF-8 bytes read as ANSI leave â€ sequences (the PS5.1 trap)
@@ -90,6 +107,20 @@ test('robots and sitemap outputs cover registered non-embed pages', () => {
     assert.match(sitemap, /<loc>https:\/\/simgeometry\.com\/<\/loc>/, 'home is present');
     assert.match(sitemap, /<loc>https:\/\/simgeometry\.com\/tools\/fov\/<\/loc>/, 'FOV tool is present');
     assert.match(sitemap, /<loc>https:\/\/simgeometry\.com\/embed\/<\/loc>/, 'embed docs are present');
+    for (const route of ['about', 'methodology', 'privacy']) {
+      assert.ok(fs.existsSync(path.join(out, route, 'index.html')), `/${route}/ page exists`);
+      assert.match(sitemap, new RegExp(`<loc>https:\\/\\/simgeometry\\.com\\/${route}\\/<\\/loc>`),
+        `/${route}/ is present in sitemap`);
+    }
+    const about = fs.readFileSync(path.join(out, 'about', 'index.html'), 'utf8');
+    const methodology = fs.readFileSync(path.join(out, 'methodology', 'index.html'), 'utf8');
+    const privacy = fs.readFileSync(path.join(out, 'privacy', 'index.html'), 'utf8');
+    assert.match(about, /Sim Geometry Research Desk/);
+    assert.match(about, /without invented experience/i);
+    assert.match(methodology, /Source hierarchy/);
+    assert.match(methodology, /No-scrape stance/);
+    assert.match(privacy, /Google Analytics 4/);
+    assert.match(privacy, /does not load GA4, set cookies, or make third-party requests/);
     assert.doesNotMatch(sitemap, /<loc>https:\/\/simgeometry\.com\/embed\/fov\/<\/loc>/, 'embed is excluded');
     assert.doesNotMatch(sitemap, /<lastmod>/, 'sitemap has no runtime dates');
   } finally {

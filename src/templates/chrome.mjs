@@ -83,10 +83,8 @@ ${(page.scripts || []).map((s) => `<script type="module" src="${s}"></script>`).
 <footer class="sg-foot">
   <div class="wrap">
     <nav aria-label="Footer">
-${SITE.footNav.map((i) => '      ' + (i.built ? `<a href="${i.href}">${esc(i.label)}</a>` : `<span class="soon">${esc(i.label)}</span>`)).join('\n')}
+${SITE.footNav.map((i) => `      <a${i.quiet ? ' class="quiet"' : ''} href="${i.href}">${esc(i.label)}</a>`).join('\n')}
     </nav>
-    <p class="credo">${esc(SITE.org)} — ${esc(SITE.credo)}</p>
-    <p>Every number on this site links to its source. We do not review hardware and we have not driven the products we document.</p>
   </div>
 </footer>
 </body>
