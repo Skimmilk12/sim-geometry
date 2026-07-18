@@ -61,6 +61,29 @@ test('production fixture: noindex disappears, canonical paths unchanged', () => 
   }
 });
 
+test('robots and sitemap outputs cover registered non-embed pages', () => {
+  const out = build();
+  try {
+    const robotsFile = path.join(out, 'robots.txt');
+    const sitemapFile = path.join(out, 'sitemap.xml');
+    assert.ok(fs.existsSync(robotsFile), 'robots.txt exists');
+    assert.ok(fs.existsSync(sitemapFile), 'sitemap.xml exists');
+
+    const robots = fs.readFileSync(robotsFile, 'utf8');
+    assert.match(robots, /^User-agent: \*\nAllow: \/\nSitemap: https:\/\/simgeometry\.com\/sitemap\.xml\n$/);
+
+    const sitemap = fs.readFileSync(sitemapFile, 'utf8');
+    assert.match(sitemap, /^<\?xml version="1\.0" encoding="UTF-8"\?>\n<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">\n(?:  <url>\n    <loc>https:\/\/simgeometry\.com\/[^<]*<\/loc>\n  <\/url>\n?)+<\/urlset>\n$/);
+    assert.match(sitemap, /<loc>https:\/\/simgeometry\.com\/<\/loc>/, 'home is present');
+    assert.match(sitemap, /<loc>https:\/\/simgeometry\.com\/tools\/fov\/<\/loc>/, 'FOV tool is present');
+    assert.match(sitemap, /<loc>https:\/\/simgeometry\.com\/embed\/<\/loc>/, 'embed docs are present');
+    assert.doesNotMatch(sitemap, /<loc>https:\/\/simgeometry\.com\/embed\/fov\/<\/loc>/, 'embed is excluded');
+    assert.doesNotMatch(sitemap, /<lastmod>/, 'sitemap has no runtime dates');
+  } finally {
+    fs.rmSync(out, { recursive: true, force: true });
+  }
+});
+
 // Collision tests run against an ISOLATED copy of the repo in the tmpdir, so
 // nothing mutates the real working tree and parallel test files can't observe
 // a planted collision (Codex finding, Exchange 23).
@@ -100,6 +123,18 @@ test('a case-folded collision (public/Index.html) also fails the build', () => {
   });
   try {
     assert.throws(() => buildIn(fix), /output collision \(case-insensitive\)/);
+  } finally {
+    fs.rmSync(fix, { recursive: true, force: true });
+  }
+});
+
+test('a public/ file colliding with a generated sitemap fails the build', () => {
+  const fix = isolatedFixture((root) => {
+    fs.mkdirSync(path.join(root, 'public'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'public', 'sitemap.xml'), 'colliding file');
+  });
+  try {
+    assert.throws(() => buildIn(fix), /output collision/);
   } finally {
     fs.rmSync(fix, { recursive: true, force: true });
   }

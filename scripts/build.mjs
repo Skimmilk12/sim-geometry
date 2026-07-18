@@ -26,6 +26,26 @@ for (const page of PAGES) {
   pageWrites.push({ file, html: renderPage(page) });
 }
 
+const base = SITE.base.replace(/\/+$/, '');
+const escapeXml = (value) => String(value)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+const robots = `User-agent: *\nAllow: /\nSitemap: ${base}/sitemap.xml\n`;
+const sitemapUrls = PAGES
+  .filter((page) => !page.embed)
+  .map((page) => `  <url>\n    <loc>${escapeXml(base + page.path)}</loc>\n  </url>`)
+  .join('\n');
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${sitemapUrls}
+</urlset>
+`;
+const generatedWrites = [
+  { rel: 'robots.txt', body: robots },
+  { rel: 'sitemap.xml', body: sitemap },
+];
+for (const { rel } of generatedWrites) manifest.claim(rel, 'build');
+
 const copies = [
   ['src/css', 'styles'],
   ['src/js', 'js'],
@@ -53,10 +73,13 @@ for (const { file, html } of pageWrites) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, html);
 }
+for (const { rel, body } of generatedWrites) {
+  fs.writeFileSync(path.join(OUT, rel), body);
+}
 for (const { from, dest } of copyWrites) {
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   fs.copyFileSync(from, dest);
 }
 fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
 
-console.log(`build: ${pageWrites.length} pages, ${copyWrites.length} static files, ${manifest.size()} outputs -> ${path.relative(ROOT, OUT) || OUT}`);
+console.log(`build: ${pageWrites.length} pages, ${generatedWrites.length} generated files, ${copyWrites.length} static files, ${manifest.size()} outputs -> ${path.relative(ROOT, OUT) || OUT}`);
