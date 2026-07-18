@@ -299,4 +299,19 @@ test('facade: manual yaw works even when no nominal yaw exists (gate Exchange 25
   });
   assert.equal(auto.ok, false);
   assert.equal(auto.error.code, 'NO_TANGENT_SOLUTION');
+  assert.equal(auto.error.field, 'eyeDistanceMm');
+});
+
+test('facade: field provenance survives recommended mode (gate Exchange 26 fixture)', () => {
+  // A NEGATIVE bezel in recommended mode must surface as the bezel error with
+  // its true field — not be swallowed into a nominal-yaw unavailability.
+  const out = calculateGeometryV1({
+    layout: 'triple',
+    screen: { widthMm: 597.71, heightMm: 336.21 },
+    eyeDistanceMm: 600,
+    triple: { bezelPerSideMm: -5, yawFromCoplanarRad: 'recommended' },
+  });
+  assert.equal(out.ok, false);
+  assert.equal(out.error.code, 'NEGATIVE');
+  assert.equal(out.error.field, 'bezelPerSideMm');
 });

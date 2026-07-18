@@ -149,11 +149,18 @@ export function calculateGeometryV1(input) {
     try {
       nominalYaw = { rad: nominalChordYawRad(base), method: YAW_METHOD };
     } catch (err) {
-      if (!(err instanceof GeometryError)) throw err;
-      nominalYaw = { rad: null, method: YAW_METHOD, unavailable: { code: err.code, message: err.message } };
+      // Only the absence of a tangent solution is a recoverable condition for
+      // manual layouts; genuine input errors (negative bezel, bad distance)
+      // must propagate with their ORIGINAL field provenance.
+      if (!(err instanceof GeometryError) || err.code !== 'NO_TANGENT_SOLUTION') throw err;
+      nominalYaw = {
+        rad: null,
+        method: YAW_METHOD,
+        unavailable: { code: err.code, message: err.message, field: err.field },
+      };
     }
     if (t.yawFromCoplanarRad === 'recommended' && nominalYaw.rad === null) {
-      return { ok: false, error: { ...nominalYaw.unavailable, field: 'eyeDistanceMm' } };
+      return { ok: false, error: nominalYaw.unavailable };
     }
     const requestedYawRad = t.yawFromCoplanarRad === 'recommended' ? nominalYaw.rad : t.yawFromCoplanarRad;
     const layoutResult = tripleLayout({ ...base, yawFromCoplanarRad: requestedYawRad });
