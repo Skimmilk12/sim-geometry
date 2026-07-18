@@ -16,7 +16,7 @@ export const SITE = {
   // so the interim github.io deployment never gets indexed as a duplicate.
   prelaunch: true,
   nav: [
-    { label: 'Geometry', href: '/tools/fov/', built: false },
+    { label: 'Geometry', href: '/tools/fov/', built: true },
     { label: 'Wheelbases', href: '/wheelbases/', built: false },
     { label: 'Upgrade Planner', href: '/tools/upgrade-planner/', built: false },
     { label: 'Guides', href: '/guides/', built: false },

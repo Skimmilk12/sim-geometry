@@ -1,0 +1,52 @@
+/* Sim Geometry Lab — tool page. Two-column on wide screens, stacked on mobile. */
+.tool-grid {
+  display: grid; gap: var(--gap);
+  grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
+  align-items: start;
+}
+@media (max-width: 860px) { .tool-grid { grid-template-columns: minmax(0, 1fr); } }
+/* grid items default to min-width:auto, which lets input/table min-content
+   sizes blow tracks past the viewport — reset the whole chain */
+.tool-grid > *, .field-row > *, .field input, .field select { min-width: 0; }
+
+.field { margin: 0 0 0.8rem; }
+.field label { display: block; font-size: 0.8rem; letter-spacing: 0.03em; color: var(--muted); margin-bottom: 0.2rem; }
+.field input, .field select {
+  width: 100%; box-sizing: border-box;
+  background: var(--bg); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: var(--r);
+  padding: 0.45rem 0.55rem; font: inherit; font-family: var(--mono);
+}
+.field input:focus-visible, .field select:focus-visible { outline: 2px solid var(--grid); outline-offset: 1px; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.field-check { display: flex; gap: 0.5rem; align-items: center; margin: 0 0 0.8rem; }
+.field-check input { width: auto; }
+.field-check label { margin: 0; font-size: 0.9rem; color: var(--ink); }
+
+.btn {
+  display: inline-block; cursor: pointer;
+  background: var(--grid); color: #fff; border: 1px solid var(--grid);
+  border-radius: var(--r); padding: 0.5rem 1rem; font: inherit; font-weight: 600;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn-quiet {
+  background: transparent; color: var(--grid);
+  border: 1px solid var(--line-strong);
+}
+
+.results-table { width: 100%; border-collapse: collapse; }
+.results-table th, .results-table td {
+  text-align: left; padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--line); vertical-align: top;
+}
+.results-table th { font-weight: 600; font-size: 0.9rem; width: 34%; }
+.results-table td[data-num] { font-family: var(--mono); }
+.results-table .note, .note { color: var(--muted); font-size: 0.82rem; white-space: normal; }
+
+.alert { border-radius: var(--r); padding: 0.7rem 0.9rem; margin: 0 0 0.8rem; font-size: 0.9rem; }
+.alert-error { border: 1px solid var(--apex); background: color-mix(in srgb, var(--apex) 8%, var(--surface)); }
+.alert-warn { border: 1px solid var(--warn); background: color-mix(in srgb, var(--warn) 8%, var(--surface)); }
+
+.tool-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.9rem; }
+details summary { cursor: pointer; color: var(--muted); font-size: 0.86rem; margin-top: 0.6rem; }
+details ul { margin: 0.4rem 0 0; }

@@ -38,7 +38,10 @@ http.createServer((req, res) => {
     res.writeHead(404, { 'content-type': 'text/plain' }).end('404');
     return;
   }
-  res.writeHead(200, { 'content-type': MIME[path.extname(file)] || 'application/octet-stream' });
+  res.writeHead(200, {
+    'content-type': MIME[path.extname(file)] || 'application/octet-stream',
+    'cache-control': 'no-store', // dev preview must never serve stale assets
+  });
   if (req.method === 'HEAD') { res.end(); return; }
   fs.createReadStream(file).pipe(res);
 }).listen(PORT, '127.0.0.1', () => console.log(`serving dist/ on http://localhost:${PORT}`));

@@ -45,6 +45,7 @@ export function renderPage(page) {
 <link rel="canonical" href="${canonical}">
 <link rel="stylesheet" href="/styles/tokens.css">
 <link rel="stylesheet" href="/styles/base.css">
+${(page.styles || []).map((s) => `<link rel="stylesheet" href="${s}">`).join('\n')}
 <script async src="https://www.googletagmanager.com/gtag/js?id=${SITE.ga4}"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
@@ -73,6 +74,7 @@ ${SITE.nav.map((i) => '      ' + navItem(i, page.path)).join('\n')}
 ${page.body}
   </div>
 </main>
+${(page.scripts || []).map((s) => `<script type="module" src="${s}"></script>`).join('\n')}
 <footer class="sg-foot">
   <div class="wrap">
     <nav aria-label="Footer">
