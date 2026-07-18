@@ -22,11 +22,12 @@ function build(extraEnv = {}) {
   return out;
 }
 
-test('prelaunch build: robots noindex, canonical, stylesheets, .nojekyll, skip link', () => {
+test('launched build: robots indexable, canonical, stylesheets, .nojekyll, skip link', () => {
   const out = build();
   try {
     const home = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
-    assert.match(home, /<meta name="robots" content="noindex, nofollow">/);
+    assert.match(home, /<meta name="robots" content="index, follow">/);
+    assert.doesNotMatch(home, /noindex/);
     assert.match(home, /<link rel="canonical" href="https:\/\/simgeometry\.com\/">/);
     assert.match(home, /href="\/styles\/tokens\.css"/);
     assert.match(home, /href="\/styles\/base\.css"/);
@@ -75,12 +76,13 @@ test('prelaunch build: robots noindex, canonical, stylesheets, .nojekyll, skip l
   }
 });
 
-test('production fixture: noindex disappears, canonical paths unchanged', () => {
-  const pre = build();
-  const prod = build({ SG_PRELAUNCH: '0' });
+test('prelaunch fixture: forcing SG_PRELAUNCH restores noindex, canonical paths unchanged', () => {
+  const pre = build({ SG_PRELAUNCH: '1' });
+  const prod = build();
   try {
     const preHome = fs.readFileSync(path.join(pre, 'index.html'), 'utf8');
     const prodHome = fs.readFileSync(path.join(prod, 'index.html'), 'utf8');
+    assert.match(preHome, /<meta name="robots" content="noindex, nofollow">/);
     assert.match(prodHome, /<meta name="robots" content="index, follow">/);
     assert.doesNotMatch(prodHome, /noindex/);
     const canon = (s) => s.match(/<link rel="canonical" href="([^"]+)">/)[1];

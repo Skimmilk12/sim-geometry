@@ -14,7 +14,7 @@ export const SITE = {
   base: 'https://simgeometry.com',
   // While true: every page carries noindex and no sitemap is generated,
   // so the interim github.io deployment never gets indexed as a duplicate.
-  prelaunch: true,
+  prelaunch: false,
   nav: [
     { label: 'Geometry', href: '/tools/fov/', built: true },
     { label: 'Guides', href: '/guides/', built: true },
