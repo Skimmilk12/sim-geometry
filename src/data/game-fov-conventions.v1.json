@@ -18,10 +18,10 @@
       "step": null,
       "menuPath": "Settings > Display > Monitor > Field of View Calculator; in-sim [ / ] hotkeys",
       "configFile": "Documents\\iRacing\\app.ini (view); Documents\\iRacing\\rendererDX11Monitor.ini (monitor geometry only — holds NO FOV-degrees key)",
-      "configKey": "drivingCamFOV (app.ini; secondary-source verified only)",
+      "configKey": null,
       "tripleMode": "native-multi-projection",
       "tripleNotes": "Select 3 Flat/Curved Screens, enter width, bezel, viewing distance, side angle; enable 'Render scene using 3 projections' (RenderViewPerMonitor=1). Map the calculator's FULL visible horizontal envelope to the driving FOV — never the center-panel span.",
-      "calculatorMapping": "visibleEnvelope",
+      "calculatorMapping": { "single": "horizontalSpan", "triple": "visibleEnvelope" },
       "sources": [
         { "url": "https://support.iracing.com/support/solutions/articles/31000171395-setting-up-three-monitors", "kind": "official-doc", "retrieved": "2026-07-18" },
         { "url": "https://support.iracing.com/support/solutions/articles/31000157600-2020-season-4-release-notes-2020-09-08-01-", "kind": "official-release-notes", "retrieved": "2026-07-18" },
@@ -30,7 +30,7 @@
       ],
       "confidence": "medium",
       "lastVerified": "2026-07-18",
-      "notes": "Both research engines agree on geometry/triple model; they split on axis-claim strength (community-only vs official-implied), so confidence is held at medium until a first-party axis sentence is found. step null: undocumented."
+      "notes": "Both research engines agree on geometry/triple model; they split on axis-claim strength (community-only vs official-implied), so confidence is held at medium until a first-party axis sentence is found. Community material reports an app.ini key named drivingCamFOV, but no direct supporting source was verified; configKey is therefore null. step null: undocumented."
     },
     {
       "game": "Assetto Corsa",
@@ -42,10 +42,10 @@
       "step": null,
       "menuPath": "On track > right-side app bar > Onboard Settings > FOV",
       "configFile": "Documents\\Assetto Corsa\\cfg\\camera_onboard.ini",
-      "configKey": "[MODE].FOV",
+      "configKey": null,
       "tripleMode": "native-multi-projection",
       "tripleNotes": "Native Triple Screen rendering mode with in-race app: per-screen Rotation/Angle, Distance, bezel Margins. In triple mode the geometry supersedes the scalar FOV — enter physical measurements; use spans only for validation.",
-      "calculatorMapping": "verticalSpan",
+      "calculatorMapping": { "single": "verticalSpan", "triple": "physical-geometry" },
       "sources": [
         { "url": "https://www.pcgamingwiki.com/wiki/Assetto_Corsa", "kind": "community-wiki", "retrieved": "2026-07-18" },
         { "url": "https://www.wsgf.org/dr/assetto-corsa/en", "kind": "community-specialist", "retrieved": "2026-07-18" },
@@ -53,7 +53,7 @@
       ],
       "confidence": "medium",
       "lastVerified": "2026-07-18",
-      "notes": "Range/config fields from one engine's config-reference sources; the other engine could not verify a config key — retained with medium confidence. step null: undocumented."
+      "notes": "Range/config-file claims come from secondary config-reference sources. Community material reports a [MODE].FOV key, but no direct supporting source was verified; configKey is therefore null. step null: undocumented."
     },
     {
       "game": "Assetto Corsa Competizione",
@@ -67,8 +67,8 @@
       "configFile": "Documents\\Assetto Corsa Competizione\\Config\\cameraSettings.json",
       "configKey": null,
       "tripleMode": "native-multi-projection",
-      "tripleNotes": "ADJUDICATED CONFLICT: the 505 support article describing a single stretched span predates v1.8 and is HISTORICAL — current ACC has a distinct Triple Screen rendering mode (v1.8+ release notes reference bezel-line handling and DLSS/FSR in 'Triple Screen rendering mode'); geometry fields include tripleWidth/tripleDistance/tripleAngle/tripleBezel. Pannini projection correction available for non-triple wide rendering.",
-      "calculatorMapping": "verticalSpan",
+      "tripleNotes": "ADJUDICATED CONFLICT: the 505 support article describing a single stretched span predates v1.8 and is HISTORICAL — current ACC has a distinct Triple Screen rendering mode (v1.8+ release notes reference bezel-line handling and DLSS/FSR in 'Triple Screen rendering mode'). Configure its physical geometry controls for triples. Pannini projection correction is available for non-triple wide rendering.",
+      "calculatorMapping": { "single": "verticalSpan", "triple": "physical-geometry" },
       "sources": [
         { "url": "https://assettocorsa.gg/assetto-corsa-competizione-pc-update-v-1-8-out-now/", "kind": "official-release-notes", "retrieved": "2026-07-18" },
         { "url": "https://support.505games.com/support/solutions/articles/150000147358-does-assetto-corsa-competizione-offer-triple-monitor-support-", "kind": "official-doc-historical", "retrieved": "2026-07-18" },
@@ -76,13 +76,13 @@
       ],
       "confidence": "medium",
       "lastVerified": "2026-07-18",
-      "notes": "The vertical convention is strong secondary consensus. Exact active-FOV JSON key not defensibly verified (null). step null: undocumented."
+      "notes": "The vertical convention is strong secondary consensus. Exact active-FOV JSON key is not defensibly verified (null). Community material names tripleWidth, tripleDistance, tripleAngle, and tripleBezel as JSON fields, but no direct supporting source was verified; those names are retained only as unverified research notes, not executable configuration guidance. step null: undocumented."
     },
     {
       "game": "Automobilista 2",
       "status": "convertible",
       "settingName": "Field of View",
-      "convention": { "axis": "horizontal", "basis": "active projection; full-span behavior on triples is community observation", "note": "OFFICIAL: Reiza staff state AMS2 uses horizontal FOV (not vertical like AMS1)." },
+      "convention": { "axis": "horizontal", "basis": "active projection; on native triples, the scalar setting represents the center-projection span", "note": "OFFICIAL: Reiza staff state AMS2 uses horizontal FOV (not vertical like AMS1)." },
       "units": "degrees",
       "range": { "min": 35, "max": 120, "conditions": "reported 16:9 single-screen baseline; range shifts with aspect ratio and triple state — not universal limits" },
       "step": null,
@@ -90,16 +90,16 @@
       "configFile": "Documents\\Automobilista 2\\triplescreensettings.xml (triple geometry)",
       "configKey": null,
       "tripleMode": "native-multi-projection",
-      "tripleNotes": "Native triple configuration (angles/bezels computed by the game). Precedence between the scalar FOV and triple geometry is not authoritatively documented; community reports FOV limits change once triples are configured.",
-      "calculatorMapping": "visibleEnvelope",
+      "tripleNotes": "Native triple configuration (angles/bezels computed by the game). Reiza guidance says to divide the calculated total triple horizontal span by 3 and enter that center span: 171° total -> 57; 178° total -> 59. Source: Reiza staff, 'Field of View - official statement' (official forum staff source below).",
+      "calculatorMapping": { "single": "horizontalSpan", "triple": "centerSpan" },
       "sources": [
         { "url": "https://forum.reizastudios.com/threads/field-of-view-offical-statement.22326/", "kind": "official-forum-staff", "retrieved": "2026-07-18" },
         { "url": "https://forum.reizastudios.com/threads/triple-monitor-setup-guide.15857/", "kind": "official-forum", "retrieved": "2026-07-18" },
         { "url": "https://forum.reizastudios.com/threads/ultrawide-monitors.34353/", "kind": "official-forum", "retrieved": "2026-07-18" }
       ],
-      "confidence": "high",
+      "confidence": "medium",
       "lastVerified": "2026-07-18",
-      "notes": "Axis is the highest-quality claim in this dataset (direct staff statement). Range/step/scalar-key remain secondary or null. calculatorMapping reflects the community-observed full-span behavior and is flagged as such in tripleNotes."
+      "notes": "The horizontal-axis claim remains high-confidence because it is a direct Reiza staff statement. Overall record confidence is medium because range, step, scalar-key behavior, and the triple center-span workflow are less comprehensively documented."
     },
     {
       "game": "rFactor 2",
@@ -114,7 +114,7 @@
       "configKey": "Vertical FOV Angle",
       "tripleMode": "native-multi-projection",
       "tripleNotes": "MultiView renders one projection per screen with in-cockpit geometry editor. In multiview, configure physical geometry — do not enter the full envelope as one FOV. Single screen: map the calculated vertical span.",
-      "calculatorMapping": "verticalSpan",
+      "calculatorMapping": { "single": "verticalSpan", "triple": "physical-geometry" },
       "sources": [
         { "url": "https://forum.studio-397.com/index.php?threads/whats-the-default-fov.30626/", "kind": "official-forum", "retrieved": "2026-07-18" },
         { "url": "https://forum.studio-397.com/index.php?threads/changing-fov-in-rf2-triple-screens.52134/", "kind": "official-forum", "retrieved": "2026-07-18" },
@@ -137,7 +137,7 @@
       "configKey": null,
       "tripleMode": "native-multi-projection",
       "tripleNotes": "rF2-heritage multiview; users report enabling it locks/overrides the Vertical FOV scalar. Configure physical geometry in multiview; map the calculated vertical span on single screens. Per-screen angle/bezel UI extent not officially documented.",
-      "calculatorMapping": "verticalSpan",
+      "calculatorMapping": { "single": "verticalSpan", "triple": "physical-geometry" },
       "sources": [
         { "url": "https://lemansultimate.com/patch-1-12th-march-2024-public-notes/", "kind": "official-release-notes", "retrieved": "2026-07-18" },
         { "url": "https://community.lemansultimate.com/index.php?threads/change-fov-on-triple-monitor-has-no-effect.4064/", "kind": "official-forum", "retrieved": "2026-07-18" },
@@ -160,7 +160,7 @@
       "configKey": null,
       "tripleMode": "native-multi-projection",
       "tripleNotes": "Current RaceRoom supports true triple projection with bezel and angle correction (originally via -triScr launch argument, later in menus). Recommended path: use Advanced FOV with physical measurements. The legacy unitless fovScale multiplier (community mapping 1.0x≈58°) is OBSOLETE and deliberately not encoded.",
-      "calculatorMapping": "physical-geometry",
+      "calculatorMapping": { "single": "physical-geometry", "triple": "physical-geometry" },
       "sources": [
         { "url": "https://forum.kw-studios.com/index.php?threads/reset-to-default-fov.19371/", "kind": "official-forum", "retrieved": "2026-07-18" },
         { "url": "https://store.steampowered.com/news/posts/?appids=211500&enddate=1630225243&feed=steam_community_announcements", "kind": "official-release-notes", "retrieved": "2026-07-18" },
@@ -179,11 +179,11 @@
       "range": { "min": 10, "max": 120, "conditions": "verified for the core_camera.setFOV console path; UI slider range not separately verified" },
       "step": null,
       "menuPath": "Options > Camera > Camera: Driver > Field of View; triples: Options > Display > Multi-Monitor Render",
-      "configFile": "vehicle jbeam camera sections (per-vehicle defaults, e.g. \"fov\":65)",
-      "configKey": "fov",
+      "configFile": null,
+      "configKey": null,
       "tripleMode": "experimental-native-multi-projection",
       "tripleNotes": "Official experimental Multi-Monitor Render: separate side projections, side-view angle sliders, requires 3 identical monitors + Borderless, Surround/Eyefinity off; NO bezel input documented. Without it, multi-monitor is one stretched span.",
-      "calculatorMapping": "verticalSpan",
+      "calculatorMapping": { "single": "verticalSpan", "triple": "verticalSpan" },
       "sources": [
         { "url": "https://documentation.beamng.com/tutorials/triple_monitor/", "kind": "official-doc", "retrieved": "2026-07-18" },
         { "url": "https://docs.beamng.com/beamng_tech/sensors/camera/", "kind": "official-doc", "retrieved": "2026-07-18" },
@@ -192,7 +192,7 @@
       ],
       "confidence": "medium",
       "lastVerified": "2026-07-18",
-      "notes": "Both engines converged on vertical via different evidence (engine fovY docs; hedged dev reply). Axis shown with its uncertainty in the UI. step null: undocumented."
+      "notes": "Both engines converged on vertical via different evidence (engine fovY docs; hedged dev reply). Axis shown with its uncertainty in the UI. Vehicle JBeam camera sections may contain a per-vehicle fov default, but that is not verified as the user-facing Driver camera setting's executable config path/key; configFile and configKey are therefore null. step null: undocumented."
     },
     {
       "game": "EA Sports F1 (22–25)",
@@ -207,7 +207,7 @@
       "configKey": null,
       "tripleMode": "single-span",
       "tripleNotes": "No native monitor-angle, bezel, or separate-projection controls.",
-      "calculatorMapping": null,
+      "calculatorMapping": { "single": null, "triple": null },
       "sources": [
         { "url": "https://www.ea.com/able/resources/f1-22/pc/camera", "kind": "official-doc", "retrieved": "2026-07-18" },
         { "url": "https://www.pcgamingwiki.com/wiki/F1_24", "kind": "community-wiki", "retrieved": "2026-07-18" }
@@ -229,7 +229,7 @@
       "configKey": null,
       "tripleMode": "single-span",
       "tripleNotes": "No native multi-projection geometry controls verified.",
-      "calculatorMapping": null,
+      "calculatorMapping": { "single": null, "triple": null },
       "sources": [
         { "url": "https://www.ea.com/able/resources/ea-sports-wrc?isLocalized=true", "kind": "official-doc", "retrieved": "2026-07-18" },
         { "url": "https://forums.ea.com/discussions/wrc-technical-issues-en/fov-field-of-view-settings-inaccurate/8372393", "kind": "official-forum", "retrieved": "2026-07-18" }
@@ -251,7 +251,7 @@
       "configKey": null,
       "tripleMode": "single-span",
       "tripleNotes": "Spanned multi-monitor output only.",
-      "calculatorMapping": null,
+      "calculatorMapping": { "single": null, "triple": null },
       "sources": [
         { "url": "https://steamcommunity.com/app/690790/discussions/0/1798529872648065835/", "kind": "community", "retrieved": "2026-07-18" },
         { "url": "https://www.projectimmersion.com/fov/howto.php?g=DR", "kind": "community", "retrieved": "2026-07-18" },
@@ -274,7 +274,7 @@
       "configKey": null,
       "tripleMode": "single-span",
       "tripleNotes": "Ultrawide/spanned rendering supported; no native angle/bezel/projection setup found.",
-      "calculatorMapping": null,
+      "calculatorMapping": { "single": null, "triple": null },
       "sources": [
         { "url": "https://support.forzamotorsport.net/hc/en-us/articles/19789919468435-Forza-Motorsport-PC-FAQ-gamescom-2023", "kind": "official-doc", "retrieved": "2026-07-18" },
         { "url": "https://forums.forza.net/t/camera-and-fov-settings-in-forza-motorsport/619113", "kind": "official-forum", "retrieved": "2026-07-18" }
@@ -296,7 +296,7 @@
       "configKey": null,
       "tripleMode": "unsupported",
       "tripleNotes": "No native multi-monitor projection mode documented. Cockpit adjustments move the camera (height/depth/orientation/wobble) without changing the projection angle.",
-      "calculatorMapping": null,
+      "calculatorMapping": { "single": null, "triple": null },
       "sources": [
         { "url": "https://www.gran-turismo.com/us/gt7/manual/drivingoption/05", "kind": "official-doc", "retrieved": "2026-07-18" },
         { "url": "https://www.gran-turismo.com/us/gt7/manual/option/01", "kind": "official-doc", "retrieved": "2026-07-18" }
