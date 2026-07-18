@@ -54,8 +54,9 @@ test('launched build: robots indexable, canonical, stylesheets, .nojekyll, skip 
     assert.match(tool, /<h1>Get the FOV your rig actually covers\.<\/h1>/);
     assert.ok(fs.existsSync(path.join(out, '.nojekyll')), '.nojekyll present');
     assert.ok(fs.existsSync(path.join(out, 'styles/base.css')), 'css copied');
-    assert.doesNotMatch(home, /aria-disabled="true"|Wheelbases|Upgrade Planner/,
+    assert.doesNotMatch(home, /aria-disabled="true"|Upgrade Planner/,
       'chrome contains no unbuilt roadmap links');
+    assert.match(home, /href="\/wheelbases\/"/, 'nav links the live wheelbase lab');
     const footer = home.match(/<footer class="sg-foot">([\s\S]*?)<\/footer>/)?.[1] ?? '';
     assert.equal((footer.match(/<a(?: class="quiet")? href=/g) ?? []).length, 4,
       'footer contains four utility links');

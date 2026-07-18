@@ -1,5 +1,6 @@
 // Page registry: every static page the build renders. Bodies are authored HTML.
 import { GUIDES, GUIDE_HUB_PAGE, GUIDE_PAGES } from './guides.mjs';
+import { WHEELBASE_PAGES } from './wheelbases.mjs';
 import { SITE } from '../site.config.mjs';
 // The production calculator is generated here once, then shared by the homepage,
 // the canonical tool route, and (with its share-card action omitted) the embed.
@@ -350,6 +351,7 @@ ${GUIDES.map((guide) => `        <a class="home-guide-link" href="/guides/${guid
 export const PAGES = [
   GUIDE_HUB_PAGE,
   ...GUIDE_PAGES,
+  ...WHEELBASE_PAGES,
   {
     path: '/tools/fov/',
     title: 'FOV Calculator — flat, curved & triple screens',

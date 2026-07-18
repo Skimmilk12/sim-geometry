@@ -17,6 +17,7 @@ export const SITE = {
   prelaunch: false,
   nav: [
     { label: 'Geometry', href: '/tools/fov/', built: true },
+    { label: 'Wheelbases', href: '/wheelbases/', built: true },
     { label: 'Guides', href: '/guides/', built: true },
     { label: 'Data & Method', href: '/methodology/', built: true },
   ],
