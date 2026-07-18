@@ -206,8 +206,10 @@ function summaryText(state, out) {
 // ---------- compute paths ----------
 
 // From canonical state (hash restore, share reproduction) — no form reread.
+// currentState is only ever set on SUCCESS, so copy actions can never carry a
+// stale or failed rig (gate Exchange 28).
 function computeFromState(state, { pushHash } = { pushHash: false }) {
-  currentState = state;
+  currentState = null;
   const input = {
     layout: state.layout,
     screen: { widthMm: state.widthMm, heightMm: state.heightMm },
@@ -220,8 +222,15 @@ function computeFromState(state, { pushHash } = { pushHash: false }) {
   };
   const out = calculateGeometryV1(input);
   renderResults(state, out);
+  if (out.ok) currentState = state;
   if (pushHash && out.ok) history.replaceState(null, '', `#${encodeStateV1(state)}`);
   return out;
+}
+
+// Any user edit invalidates the last result: stale copying must be impossible.
+function invalidateResult() {
+  currentState = null;
+  hideActions();
 }
 
 // From user-submitted form.
@@ -247,7 +256,9 @@ export function init() {
   const form = $('fov-form');
   lastUnits = $('units').value;
   form.addEventListener('submit', (e) => { e.preventDefault(); calculate(); });
+  form.addEventListener('input', invalidateResult);
   form.addEventListener('change', (e) => {
+    invalidateResult();
     if (e.target.id === 'units') convertDisplayedUnits();
     syncVisibility();
   });
