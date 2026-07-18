@@ -276,3 +276,27 @@ test('facade: structured errors, never throws', () => {
   assert.equal(badRes.error.code, 'NOT_POSITIVE');
   assert.equal(badRes.error.field, 'resolution.vertical');
 });
+
+test('facade: manual yaw works even when no nominal yaw exists (gate Exchange 25 fixture)', () => {
+  // 1300 mm active at 600 mm: the chord-tangent comparison exceeds 90°, but a
+  // manual 0° layout is perfectly valid (145.79° envelope) and must succeed.
+  const screen = { widthMm: 1300, heightMm: 550 };
+  const manual = calculateGeometryV1({
+    layout: 'triple', screen, eyeDistanceMm: 600,
+    triple: { bezelPerSideMm: 0, yawFromCoplanarRad: 0 },
+  });
+  assert.equal(manual.ok, true, 'manual layout must not fail on the optional nominal comparison');
+  closeDeg(manual.results.visibleEnvelopeRad, 145.79, 'manual coplanar envelope');
+  assert.equal(manual.results.nominalYaw.rad, null);
+  assert.equal(manual.results.nominalYaw.method, 'flat-chord-tangent');
+  assert.equal(manual.results.nominalYaw.unavailable.code, 'NO_TANGENT_SOLUTION');
+  assert.equal(manual.results.yawDeltaFromNominalRad, null);
+  assert.ok(manual.warnings.some((w) => w.code === 'NOMINAL_YAW_UNAVAILABLE'));
+  // the 'recommended' sentinel still fails structurally for the same rig
+  const auto = calculateGeometryV1({
+    layout: 'triple', screen, eyeDistanceMm: 600,
+    triple: { bezelPerSideMm: 0, yawFromCoplanarRad: 'recommended' },
+  });
+  assert.equal(auto.ok, false);
+  assert.equal(auto.error.code, 'NO_TANGENT_SOLUTION');
+});

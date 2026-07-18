@@ -142,9 +142,28 @@ export function calculateGeometryV1(input) {
       eyeDistanceMm,
       radiusMm: curveRadiusMm,
     };
-    const nominalYawRad = nominalChordYawRad(base);
-    const requestedYawRad = t.yawFromCoplanarRad === 'recommended' ? nominalYawRad : t.yawFromCoplanarRad;
+    // The nominal yaw is an OPTIONAL comparison for manual layouts: if it has
+    // no <=90° solution, a numeric manual yaw still calculates normally
+    // (gate Exchange 25). Only the 'recommended' sentinel depends on it.
+    let nominalYaw;
+    try {
+      nominalYaw = { rad: nominalChordYawRad(base), method: YAW_METHOD };
+    } catch (err) {
+      if (!(err instanceof GeometryError)) throw err;
+      nominalYaw = { rad: null, method: YAW_METHOD, unavailable: { code: err.code, message: err.message } };
+    }
+    if (t.yawFromCoplanarRad === 'recommended' && nominalYaw.rad === null) {
+      return { ok: false, error: { ...nominalYaw.unavailable, field: 'eyeDistanceMm' } };
+    }
+    const requestedYawRad = t.yawFromCoplanarRad === 'recommended' ? nominalYaw.rad : t.yawFromCoplanarRad;
     const layoutResult = tripleLayout({ ...base, yawFromCoplanarRad: requestedYawRad });
+    const warnings = [...layoutResult.warnings];
+    if (nominalYaw.rad === null) {
+      warnings.push({
+        code: 'NOMINAL_YAW_UNAVAILABLE',
+        message: 'no chord-tangent yaw <= 90° exists for this rig; the manual yaw was used without a nominal comparison',
+      });
+    }
     const seamMm = seamGapMm(t.bezelPerSideMm);
     const sens = sensitivityBand(
       (d) => tripleLayout({ ...base, eyeDistanceMm: d, yawFromCoplanarRad: requestedYawRad }).visibleEnvelopeRad,
@@ -162,9 +181,9 @@ export function calculateGeometryV1(input) {
         seamOcclusionPerSideRad: layoutResult.seamOcclusionPerSideRad,
         centerSpanRad: layoutResult.centerSpanRad,
         verticalSpanRad,
-        nominalYaw: { rad: nominalYawRad, method: YAW_METHOD },
+        nominalYaw,
         requestedYawRad,
-        yawDeltaFromNominalRad: requestedYawRad - nominalYawRad,
+        yawDeltaFromNominalRad: nominalYaw.rad === null ? null : requestedYawRad - nominalYaw.rad,
         seamGapMm: seamMm,
         seamHiddenPixels: resolution ? seamHiddenPixels(seamMm, widthMm, resolution.horizontal) : null,
         equivalentSpan: resolution
@@ -175,7 +194,7 @@ export function calculateGeometryV1(input) {
           : null,
         sensitivity: sens,
       },
-      warnings: layoutResult.warnings,
+      warnings,
       assumptions,
     };
   } catch (err) {

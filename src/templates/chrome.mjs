@@ -45,6 +45,13 @@ export function renderPage(page) {
 <link rel="canonical" href="${canonical}">
 <link rel="stylesheet" href="/styles/tokens.css">
 <link rel="stylesheet" href="/styles/base.css">
+<script async src="https://www.googletagmanager.com/gtag/js?id=${SITE.ga4}"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${SITE.ga4}');
+</script>
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to main content</a>

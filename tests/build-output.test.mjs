@@ -34,6 +34,7 @@ test('prelaunch build: robots noindex, canonical, stylesheets, .nojekyll, skip l
     assert.ok(fs.existsSync(path.join(out, 'styles/base.css')), 'css copied');
     assert.match(home, /aria-disabled="true"/, 'soon items are marked disabled');
     assert.doesNotMatch(home, /style="/, 'no inline styles in generated pages');
+    assert.match(home, /googletagmanager\.com\/gtag\/js\?id=G-MPKRBBQCHF/, 'GA4 stream wired');
   } finally {
     fs.rmSync(out, { recursive: true, force: true });
   }

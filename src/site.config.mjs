@@ -2,6 +2,9 @@
 // generators must import from this file, never hardcode (the site-#1 lesson).
 export const SITE = {
   name: 'Sim Geometry',
+  // GA4 web stream (property 546071412, account 399630254). The embed
+  // (/embed/*) must NEVER carry analytics — its template omits this.
+  ga4: 'G-MPKRBBQCHF',
   brand: 'SIM GEOMETRY',
   tagline: 'measurements · compatibility · cost',
   credo: 'Measurements, compatibility, and cost — without invented experience.',
