@@ -8,7 +8,7 @@ const FIXTURES = [
   {
     name: 'single flat with resolution',
     state: {
-      layout: 'single', units: 'in', widthMm: 597.7, heightMm: 336.2,
+      layout: 'single', units: 'in', game: 'iracing', widthMm: 597.7, heightMm: 336.2,
       eyeDistanceMm: 600, curveRadiusMm: null, resolution: { horizontal: 2560, vertical: 1440 },
       bezelPerSideMm: null, yaw: null,
     },
@@ -49,6 +49,7 @@ for (const { name, state } of FIXTURES) {
     // and the decoded values match the (0.1 mm / 0.01°) canonical rounding
     assert.equal(decoded.state.layout, state.layout);
     assert.equal(decoded.state.units, state.units);
+    assert.equal(decoded.state.game, state.game ?? null);
     assert.ok(Math.abs(decoded.state.widthMm - state.widthMm) < 0.05 + 1e-9);
     assert.ok(Math.abs(decoded.state.eyeDistanceMm - state.eyeDistanceMm) < 0.05 + 1e-9);
     if (state.layout === 'triple' && state.yaw !== 'recommended') {
@@ -63,6 +64,23 @@ test('decode: leading # accepted; unknown keys ignored (forward compatibility)',
   const decoded = decodeStateV1(withExtra);
   assert.equal(decoded.ok, true);
   assert.equal(encodeStateV1(decoded.state), encoded);
+});
+
+test('game slug round-trips; unknown and absent games are tolerated', () => {
+  const encoded = encodeStateV1({ ...FIXTURES[1].state, game: 'assetto-corsa-competizione' });
+  assert.match(encoded, /(?:^|&)g=assetto-corsa-competizione(?:&|$)/);
+  const decoded = decodeStateV1(encoded);
+  assert.equal(decoded.ok, true);
+  assert.equal(decoded.state.game, 'assetto-corsa-competizione');
+  assert.equal(encodeStateV1(decoded.state), encoded);
+
+  const unknown = decodeStateV1('v=1&l=s&u=mm&g=future-sim&w=600&h=340&e=700');
+  assert.equal(unknown.ok, true);
+  assert.equal(unknown.state.game, 'future-sim');
+
+  const absent = decodeStateV1('v=1&l=s&u=mm&w=600&h=340&e=700');
+  assert.equal(absent.ok, true);
+  assert.equal(absent.state.game, null);
 });
 
 test('decode: malformed fragments are rejected, never throw', () => {

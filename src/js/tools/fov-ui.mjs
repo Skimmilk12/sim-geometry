@@ -15,6 +15,14 @@ const round1 = (v) => Math.round(v * 10) / 10;
 const fmt = (v) => String(Math.round(v * 1000) / 1000);
 
 let currentState = null; // canonical mm state of the last computed result
+let currentOutput = null;
+let gameRecords = new Map();
+
+const gameSlug = (name) => String(name)
+  .normalize('NFKD')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-|-$/g, '');
 
 // ---------- form -> state (user edits only) ----------
 
@@ -53,6 +61,7 @@ function readForm() {
     state: {
       layout,
       units,
+      game: $('game').value || null,
       widthMm,
       heightMm,
       eyeDistanceMm: toMm($('distance').value),
@@ -71,6 +80,7 @@ function readForm() {
 function writeForm(state) {
   $('units').value = state.units;
   $('layout').value = state.layout;
+  $('game').value = state.game && gameRecords.has(state.game) ? state.game : '';
   $('size-mode').value = 'measured';
   const fromMm = (v) => fmt(v / UNIT_TO_MM[state.units]);
   $('width').value = fromMm(state.widthMm);
@@ -127,7 +137,189 @@ function convertDisplayedUnits() {
   syncUnitEchoes();
 }
 
+// ---------- game convention dataset ----------
+
+function populateGameSelect(records) {
+  const select = $('game');
+  select.replaceChildren(new Option('No game selected', ''));
+
+  for (const [label, status] of [
+    ['Verified conversions', 'convertible'],
+    ['No verified conversion', 'no-conversion'],
+  ]) {
+    const group = document.createElement('optgroup');
+    group.label = label;
+    for (const record of records.filter((candidate) => candidate.status === status)) {
+      group.append(new Option(record.game, gameSlug(record.game)));
+    }
+    select.append(group);
+  }
+}
+
+async function loadGameRecords() {
+  const field = $('game-field');
+  const note = $('game-data-note');
+  try {
+    const response = await fetch('/data/game-fov-conventions.v1.json');
+    if (!response.ok) throw new Error(`dataset request returned ${response.status}`);
+    const data = await response.json();
+    if (!Array.isArray(data.records) || data.records.length === 0) throw new Error('dataset has no records');
+
+    const loaded = new Map();
+    for (const record of data.records) {
+      if (!record || typeof record.game !== 'string' || !['convertible', 'no-conversion'].includes(record.status)) {
+        throw new Error('dataset contains an invalid record');
+      }
+      const slug = gameSlug(record.game);
+      if (!slug || loaded.has(slug)) throw new Error('dataset contains an invalid or duplicate game name');
+      loaded.set(slug, record);
+    }
+
+    gameRecords = loaded;
+    populateGameSelect([...loaded.values()]);
+    field.hidden = false;
+    note.hidden = true;
+
+    if (currentState) {
+      $('game').value = currentState.game && gameRecords.has(currentState.game) ? currentState.game : '';
+      renderGameRecord(currentState, currentOutput);
+    }
+  } catch {
+    gameRecords = new Map();
+    field.hidden = true;
+    note.textContent = 'Game conversion records are unavailable. The physical FOV calculator still works.';
+    note.hidden = false;
+    clearGameRecord();
+  }
+}
+
 // ---------- rendering ----------
+
+const escapeHtml = (value) => String(value ?? '')
+  .replaceAll('&', '&amp;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;')
+  .replaceAll('"', '&quot;')
+  .replaceAll("'", '&#39;');
+
+function clearGameRecord() {
+  const panel = $('game-record');
+  panel.hidden = true;
+  panel.replaceChildren();
+}
+
+function sourceList(record) {
+  return `<div class="game-record__sources">
+    <h3>Sources</h3>
+    <ul>${record.sources.map((source, index) => `
+      <li><a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">Source ${index + 1}: ${escapeHtml(source.kind)}</a>
+      <span class="note">retrieved ${escapeHtml(source.retrieved)}</span></li>`).join('')}
+    </ul>
+  </div>`;
+}
+
+function conventionLine(record) {
+  const axis = record.convention.axis ? `${record.convention.axis} FOV` : 'axis undisclosed';
+  const basis = record.convention.basis ?? 'basis undisclosed';
+  return `<p class="game-record__convention"><strong>Convention + basis:</strong> ${escapeHtml(axis)}; ${escapeHtml(basis)}.</p>`;
+}
+
+function recordHeader(record) {
+  return `<header class="game-record__header">
+    <div><p class="game-record__eyebrow">Game setting guidance</p><h2>${escapeHtml(record.game)}</h2></div>
+    <span class="confidence-badge confidence-badge--${escapeHtml(record.confidence)}">${escapeHtml(record.confidence)} confidence</span>
+  </header>
+  <dl class="game-record__facts">
+    <div><dt>Setting</dt><dd>${escapeHtml(record.settingName ?? 'No FOV setting')}</dd></div>
+    <div><dt>Menu path</dt><dd>${escapeHtml(record.menuPath ?? 'Not documented')}</dd></div>
+  </dl>`;
+}
+
+function mappedAngle(results, mapping) {
+  const radians = {
+    horizontalSpan: results.horizontalSpanRad,
+    verticalSpan: results.verticalSpanRad,
+    centerSpan: results.centerSpanRad,
+    visibleEnvelope: results.visibleEnvelopeRad,
+  }[mapping];
+  return Number.isFinite(radians) ? toDegrees(radians) : null;
+}
+
+function stepDecimals(step) {
+  if (Number.isInteger(step)) return 0;
+  const text = String(step).toLowerCase();
+  if (text.includes('e-')) return Math.min(6, Number(text.split('e-')[1]));
+  return Math.min(6, (text.split('.')[1] ?? '').length);
+}
+
+function displayGameValue(value, step) {
+  const increment = Number.isFinite(step) && step > 0 ? step : 0.1;
+  const decimals = Number.isFinite(step) && step > 0 ? stepDecimals(step) : 1;
+  return (Math.round(value / increment) * increment).toFixed(decimals);
+}
+
+function rangeCheck(record, value) {
+  if (!record.range) return '<p class="game-record__range note">No verified setting range is available for this record.</p>';
+  const outside = value < record.range.min || value > record.range.max;
+  const conditions = record.range.conditions ? ` ${escapeHtml(record.range.conditions)}.` : '';
+  if (outside) {
+    return `<div class="alert alert-warn game-record__range" role="status"><strong>Outside the documented range:</strong>
+      ${escapeHtml(record.range.min)}&ndash;${escapeHtml(record.range.max)}. The calculated value may not be enterable.${conditions}</div>`;
+  }
+  return `<p class="game-record__range"><strong>Range check:</strong> within ${escapeHtml(record.range.min)}&ndash;${escapeHtml(record.range.max)}.${conditions}</p>`;
+}
+
+function renderGameRecord(state, out) {
+  const record = state?.game ? gameRecords.get(state.game) : null;
+  if (!record || !out?.ok) {
+    clearGameRecord();
+    return;
+  }
+
+  const panel = $('game-record');
+  const header = recordHeader(record);
+  const metadata = `<p class="game-record__verified"><strong>Last verified:</strong> ${escapeHtml(record.lastVerified)}</p>`;
+  let body;
+
+  if (record.status === 'no-conversion') {
+    body = `${header}
+      <div class="game-record__guidance alert alert-warn"><strong>No verified conversion.</strong> ${escapeHtml(record.notes)}</div>
+      ${conventionLine(record)}
+      <p class="note">${escapeHtml(record.convention.note)}</p>
+      ${metadata}
+      ${sourceList(record)}`;
+  } else {
+    const mapping = record.calculatorMapping[state.layout];
+    if (mapping === 'physical-geometry') {
+      body = `${header}
+        <div class="game-record__guidance"><strong>Use the game's physical-geometry setup; no scalar value is shown.</strong>
+          <p>${escapeHtml(record.tripleNotes ?? record.notes)}</p>
+        </div>
+        ${conventionLine(record)}
+        <p class="note">${escapeHtml(record.convention.note)}</p>
+        ${metadata}
+        ${sourceList(record)}`;
+    } else {
+      const value = mappedAngle(out.results, mapping);
+      if (value === null) {
+        body = `${header}<div class="alert alert-warn"><strong>No mapped result is available for this layout.</strong></div>${metadata}${sourceList(record)}`;
+      } else {
+        const shown = displayGameValue(value, record.step);
+        body = `${header}
+          <div class="game-record__value"><span>The value to enter</span><strong>${escapeHtml(shown)}&deg;</strong></div>
+          ${rangeCheck(record, value)}
+          ${conventionLine(record)}
+          <p class="note">${escapeHtml(record.convention.note)}</p>
+          <p class="game-record__honesty">This is the physical span mapped to ${escapeHtml(record.game)}s convention - verified ${escapeHtml(record.lastVerified)}, ${escapeHtml(record.confidence)} confidence. Check the sources if it matters.</p>
+          ${metadata}
+          ${sourceList(record)}`;
+      }
+    }
+  }
+
+  panel.innerHTML = body;
+  panel.hidden = false;
+}
 
 function row(label, value, note = '') {
   return `<tr><th scope="row">${label}</th><td data-num>${value}</td><td class="note">${note}</td></tr>`;
@@ -143,6 +335,7 @@ function hideActions() {
 function renderResults(state, out) {
   const box = $('results');
   hideActions();
+  clearGameRecord();
   if (!out.ok) {
     box.innerHTML = `<div class="alert alert-error" role="alert">
       <strong>Can't calculate this rig.</strong> ${out.error.message}
@@ -188,6 +381,8 @@ function renderResults(state, out) {
       <ul>${out.assumptions.map((a) => `<li><code>${a}</code></li>`).join('')}</ul>
     </details>`;
 
+  renderGameRecord(state, out);
+
   const actions = $('actions');
   actions.hidden = false;
   actions.dataset.summary = summaryText(state, out);
@@ -210,6 +405,7 @@ function summaryText(state, out) {
 // stale or failed rig (gate Exchange 28).
 function computeFromState(state, { pushHash } = { pushHash: false }) {
   currentState = null;
+  currentOutput = null;
   const input = {
     layout: state.layout,
     screen: { widthMm: state.widthMm, heightMm: state.heightMm },
@@ -221,8 +417,11 @@ function computeFromState(state, { pushHash } = { pushHash: false }) {
       : null,
   };
   const out = calculateGeometryV1(input);
+  if (out.ok) {
+    currentState = state;
+    currentOutput = out;
+  }
   renderResults(state, out);
-  if (out.ok) currentState = state;
   if (pushHash && out.ok) history.replaceState(null, '', `#${encodeStateV1(state)}`);
   return out;
 }
@@ -230,13 +429,17 @@ function computeFromState(state, { pushHash } = { pushHash: false }) {
 // Any user edit invalidates the last result: stale copying must be impossible.
 function invalidateResult() {
   currentState = null;
+  currentOutput = null;
   hideActions();
+  clearGameRecord();
 }
 
 // From user-submitted form.
 function calculate() {
   const read = readForm();
   if (read.formError) {
+    currentState = null;
+    currentOutput = null;
     renderResults(null, { ok: false, error: read.formError });
     return;
   }
@@ -252,12 +455,26 @@ function restoreFromHash() {
   return true;
 }
 
+function selectGame() {
+  if (!currentState || !currentOutput?.ok) return;
+  currentState = { ...currentState, game: $('game').value || null };
+  renderGameRecord(currentState, currentOutput);
+  history.replaceState(null, '', `#${encodeStateV1(currentState)}`);
+  $('actions').dataset.summary = summaryText(currentState, currentOutput);
+}
+
 export function init() {
   const form = $('fov-form');
   lastUnits = $('units').value;
   form.addEventListener('submit', (e) => { e.preventDefault(); calculate(); });
-  form.addEventListener('input', invalidateResult);
+  form.addEventListener('input', (e) => {
+    if (e.target.id !== 'game') invalidateResult();
+  });
   form.addEventListener('change', (e) => {
+    if (e.target.id === 'game') {
+      selectGame();
+      return;
+    }
     invalidateResult();
     if (e.target.id === 'units') convertDisplayedUnits();
     syncVisibility();
@@ -278,6 +495,7 @@ export function init() {
   window.addEventListener('hashchange', restoreFromHash);
   syncVisibility();
   syncUnitEchoes();
+  void loadGameRecords();
   restoreFromHash();
 }
 

@@ -25,6 +25,14 @@ const FOV_TOOL_BODY = `
           </div>
         </div>
 
+        <div id="game-field" class="field" hidden>
+          <label for="game">Game <span class="note">(optional)</span></label>
+          <select id="game">
+            <option value="">No game selected</option>
+          </select>
+        </div>
+        <p id="game-data-note" class="note" role="status" hidden></p>
+
         <div class="field">
           <label for="size-mode">Screen size from</label>
           <select id="size-mode">
@@ -116,6 +124,7 @@ const FOV_TOOL_BODY = `
           physical measurement with its assumptions listed — nothing is a guess, and
           nothing here requires an account or sends your numbers anywhere.</p>
         </div>
+        <section id="game-record" class="game-record" aria-label="Selected game FOV guidance" aria-live="polite" hidden></section>
         <div id="actions" class="tool-actions" hidden>
           <button class="btn btn-quiet" type="button" id="copy-link">Copy share link</button>
           <button class="btn btn-quiet" type="button" id="copy-summary">Copy summary</button>

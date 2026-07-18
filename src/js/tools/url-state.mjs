@@ -1,5 +1,5 @@
 // Versioned fragment-state codec for the Sim Geometry Lab (spec: annex §4).
-// #v=1&l=t&w=597.7&h=336.2&e=600&b=7&y=a&rx=2560&ry=1440&u=in&r=1800
+// #v=1&l=t&u=in&g=iracing&w=597.7&h=336.2&e=600&r=1800&rx=2560&ry=1440&b=7&y=a
 // Rules: v=1 mandatory; dimensions stored normalized in MILLIMETRES (0.1 mm);
 // yaw stored in degrees (0.01°) or 'a' for the recommended sentinel; unknown
 // keys ignored so v2 decoders stay backward-compatible; no free text.
@@ -7,6 +7,7 @@
 
 const DEG = 180 / Math.PI;
 const round = (v, dp) => Math.round(v * 10 ** dp) / 10 ** dp;
+const GAME_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const num = (s) => {
   if (typeof s !== 'string' || !/^-?\d+(\.\d+)?$/.test(s)) return null;
@@ -22,6 +23,7 @@ const int = (s) => {
  * state = {
  *   layout: 'single' | 'triple',
  *   units: 'mm' | 'cm' | 'in',            // display preference only
+ *   game: string | null,                    // kebab-case dataset slug
  *   widthMm, heightMm, eyeDistanceMm,     // normalized mm
  *   curveRadiusMm: number | null,
  *   resolution: { horizontal, vertical } | null,
@@ -34,6 +36,7 @@ export function encodeStateV1(state) {
   p.set('v', '1');
   p.set('l', state.layout === 'triple' ? 't' : 's');
   p.set('u', state.units);
+  if (typeof state.game === 'string' && GAME_SLUG.test(state.game)) p.set('g', state.game);
   p.set('w', String(round(state.widthMm, 1)));
   p.set('h', String(round(state.heightMm, 1)));
   p.set('e', String(round(state.eyeDistanceMm, 1)));
@@ -63,6 +66,11 @@ export function decodeStateV1(fragment) {
     return { ok: false, reason: 'bad units' };
   }
   const units = p.get('u') ?? 'mm';
+  // The codec deliberately does not know the game dataset. Any syntactically
+  // valid slug survives a round-trip; the UI treats an unknown slug as no
+  // selection, so old links keep calculating if records change.
+  const rawGame = p.get('g');
+  const game = rawGame !== null && GAME_SLUG.test(rawGame) ? rawGame : null;
 
   const widthMm = num(p.get('w'));
   const heightMm = num(p.get('h'));
@@ -98,6 +106,6 @@ export function decodeStateV1(fragment) {
 
   return {
     ok: true,
-    state: { layout, units, widthMm, heightMm, eyeDistanceMm, curveRadiusMm, resolution, bezelPerSideMm, yaw },
+    state: { layout, units, game, widthMm, heightMm, eyeDistanceMm, curveRadiusMm, resolution, bezelPerSideMm, yaw },
   };
 }

@@ -43,6 +43,55 @@
 .results-table td[data-num] { font-family: var(--mono); }
 .results-table .note, .note { color: var(--muted); font-size: 0.82rem; white-space: normal; }
 
+.game-record {
+  margin-top: 1rem; padding: 0.9rem;
+  border: 1px solid var(--line-strong); border-radius: var(--r);
+  background: color-mix(in srgb, var(--grid) 3%, var(--surface));
+}
+.game-record__header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 0.75rem; margin-bottom: 0.8rem;
+}
+.game-record__header h2 { margin: 0.1rem 0 0; font-size: 1.2rem; }
+.game-record__eyebrow {
+  margin: 0; color: var(--muted); font-size: 0.72rem;
+  font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.confidence-badge {
+  flex: 0 0 auto; border: 1px solid currentColor; border-radius: 999px;
+  padding: 0.18rem 0.5rem; font-size: 0.72rem; font-weight: 700;
+  text-transform: uppercase;
+}
+.confidence-badge--high { color: var(--grid); background: color-mix(in srgb, var(--grid) 8%, var(--surface)); }
+.confidence-badge--medium { color: var(--warn); background: color-mix(in srgb, var(--warn) 8%, var(--surface)); }
+.confidence-badge--low { color: var(--apex); background: color-mix(in srgb, var(--apex) 8%, var(--surface)); }
+.game-record__facts { margin: 0 0 0.8rem; }
+.game-record__facts > div {
+  display: grid; grid-template-columns: minmax(5rem, 22%) minmax(0, 1fr);
+  gap: 0.6rem; padding: 0.35rem 0; border-bottom: 1px solid var(--line);
+}
+.game-record__facts dt { color: var(--muted); font-size: 0.8rem; }
+.game-record__facts dd { margin: 0; overflow-wrap: anywhere; }
+.game-record__value {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 0.8rem;
+  margin: 0.8rem 0; padding: 0.7rem 0.8rem;
+  border-left: 0.25rem solid var(--grid); background: var(--bg);
+}
+.game-record__value span { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; }
+.game-record__value strong { color: var(--grid); font-family: var(--mono); font-size: 1.55rem; }
+.game-record__range, .game-record__convention, .game-record__verified { font-size: 0.86rem; }
+.game-record__guidance { margin: 0.8rem 0; padding: 0.7rem 0.8rem; border-left: 0.25rem solid var(--grid); background: var(--bg); }
+.game-record__guidance p { margin: 0.35rem 0 0; }
+.game-record__honesty { padding-top: 0.7rem; border-top: 1px solid var(--line); font-size: 0.86rem; }
+.game-record__sources h3 { margin: 0.8rem 0 0.3rem; font-size: 0.9rem; }
+.game-record__sources ul { margin: 0; padding-left: 1.2rem; }
+.game-record__sources li { margin: 0.25rem 0; overflow-wrap: anywhere; }
+.game-record__sources .note { margin-left: 0.3rem; }
+@media (max-width: 520px) {
+  .game-record__header, .game-record__value { align-items: flex-start; flex-direction: column; }
+  .game-record__facts > div { grid-template-columns: 1fr; gap: 0.1rem; }
+}
+
 .alert { border-radius: var(--r); padding: 0.7rem 0.9rem; margin: 0 0 0.8rem; font-size: 0.9rem; }
 .alert-error { border: 1px solid var(--apex); background: color-mix(in srgb, var(--apex) 8%, var(--surface)); }
 .alert-warn { border: 1px solid var(--warn); background: color-mix(in srgb, var(--warn) 8%, var(--surface)); }
