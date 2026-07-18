@@ -44,3 +44,35 @@
     --warn: #d9a13e;
   }
 }
+
+/* Embeds force a palette on their wrapper when requested. Keeping these
+   overrides in the token layer gives every component the same theme contract. */
+.theme-light {
+  color-scheme: light;
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #171a21;
+  --muted: #5b6472;
+  --line: #d8dde5;
+  --line-strong: #b9c1cc;
+  --grid: #2757d1;
+  --grid-soft: #e6ecfb;
+  --apex: #cf3312;
+  --ok: #17724a;
+  --warn: #9a6200;
+}
+
+.theme-dark {
+  color-scheme: dark;
+  --bg: #101318;
+  --surface: #171c24;
+  --ink: #e8ebf0;
+  --muted: #98a1ae;
+  --line: #2a313c;
+  --line-strong: #3b4450;
+  --grid: #7c9eff;
+  --grid-soft: #1c2438;
+  --apex: #ff7052;
+  --ok: #4fc48d;
+  --warn: #d9a13e;
+}

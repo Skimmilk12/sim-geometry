@@ -1,10 +1,5 @@
 // Page registry: every static page the build renders. Bodies are authored HTML.
-const FOV_TOOL_BODY = `
-    <h1>The Geometry Lab</h1>
-    <p class="dek">Field-of-view math for flat, curved, and triple-screen rigs — with the
-    formulas, assumptions, and measurement sensitivity shown alongside every result.
-    Results get a share URL that reproduces them exactly.</p>
-
+const FOV_CALCULATOR_BODY = `
     <div class="tool-grid">
       <form id="fov-form" class="panel" aria-label="Rig dimensions">
         <div class="field-row">
@@ -135,6 +130,75 @@ const FOV_TOOL_BODY = `
     <noscript><div class="alert alert-warn">The calculator needs JavaScript — it runs entirely
     in your browser; no data leaves the page.</div></noscript>`;
 
+const FOV_TOOL_BODY = `
+    <h1>The Geometry Lab</h1>
+    <p class="dek">Field-of-view math for flat, curved, and triple-screen rigs — with the
+    formulas, assumptions, and measurement sensitivity shown alongside every result.
+    Results get a share URL that reproduces them exactly.</p>
+${FOV_CALCULATOR_BODY}`;
+
+const FOV_EMBED_BODY = `
+  <div id="embed-root" class="embed-root theme-auto">
+    <header class="embed-header">
+      <h1>FOV calculator</h1>
+      <p>Flat, curved, and triple-screen geometry.</p>
+    </header>
+${FOV_CALCULATOR_BODY}
+    <footer class="embed-attribution">
+      <a id="embed-attribution" href="https://simgeometry.com/tools/fov/" target="_blank" rel="noopener">Calculated by Sim Geometry</a>
+    </footer>
+  </div>`;
+
+const EMBED_DOCS_BODY = `
+    <h1>Embed the FOV calculator</h1>
+    <p class="dek">Add the Sim Geometry field-of-view calculator to a guide, community site,
+    or rig-planning page with one iframe.</p>
+
+    <div class="panel copy">
+      <h2>What it is</h2>
+      <p>The embed is the same flat, curved, and triple-screen calculator as the full Geometry
+      Lab. It uses the same calculation engine and share-fragment format in a compact,
+      single-column layout.</p>
+
+      <h2>Privacy</h2>
+      <p>no analytics, no cookies, no external requests - audit the network tab</p>
+      <p>The calculator runs in the visitor's browser. Its only network request is an optional,
+      same-origin game-conventions dataset; if that dataset is unavailable, the physical
+      geometry calculator keeps working.</p>
+
+      <h2>Copy-paste iframe</h2>
+      <pre><code>&lt;iframe id='sim-geometry-fov'
+  src='https://simgeometry.com/embed/fov/?theme=auto&amp;amp;units=in'
+  title='Sim Geometry FOV calculator'
+  loading='lazy'
+  sandbox='allow-scripts allow-popups allow-popups-to-escape-sandbox'
+  width='100%'
+  height='900'&gt;&lt;/iframe&gt;</code></pre>
+
+      <h2>Parameters</h2>
+      <dl>
+        <dt><code>theme=light|dark|auto</code></dt>
+        <dd>Forces the light or dark palette, or follows the visitor's color-scheme preference.</dd>
+        <dt><code>units=in|cm|mm</code></dt>
+        <dd>Sets the form's initial measurement units. A valid share fragment takes precedence.</dd>
+      </dl>
+
+      <h2>Automatic height</h2>
+      <p>The embed reports its rendered height. Add this script on the parent page after the iframe:</p>
+      <pre><code>&lt;script&gt;
+const frame = document.querySelector('#sim-geometry-fov');
+
+window.addEventListener('message', (event) =&gt; {
+  const message = event.data;
+  if (event.source !== frame.contentWindow ||
+      message?.type !== 'sim-geometry-embed-height' ||
+      !Number.isFinite(message.px)) return;
+
+  frame.height = String(Math.max(320, Math.ceil(message.px)));
+});
+&lt;/script&gt;</code></pre>
+    </div>`;
+
 export const PAGES = [
   {
     path: '/tools/fov/',
@@ -144,6 +208,22 @@ export const PAGES = [
     styles: ['/styles/tool.css'],
     scripts: ['/js/tools/fov-ui.mjs'],
     body: FOV_TOOL_BODY,
+  },
+  {
+    path: '/embed/fov/',
+    title: 'Embeddable FOV calculator',
+    description: 'Compact, privacy-first Sim Geometry FOV calculator for iframe embeds.',
+    robots: 'noindex, nofollow',
+    embed: true,
+    styles: ['/styles/tool.css', '/styles/embed.css'],
+    scripts: ['/js/tools/fov-ui.mjs'],
+    body: FOV_EMBED_BODY,
+  },
+  {
+    path: '/embed/',
+    title: 'Embed the FOV calculator',
+    description: 'How to embed the privacy-first Sim Geometry FOV calculator, including theme, units, and automatic height options.',
+    body: EMBED_DOCS_BODY,
   },
   {
     path: '/',

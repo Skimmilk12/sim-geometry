@@ -1,0 +1,36 @@
+/* Standalone calculator embed: compact, single-column, and chrome-free. */
+html, body { min-width: 0; }
+body { background: transparent; }
+main { padding: 0; }
+
+.embed-root {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0.75rem;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.embed-header { margin: 0 0 0.75rem; }
+.embed-header h1 { margin: 0; font-size: 1.25rem; }
+.embed-header p { margin: 0.15rem 0 0; color: var(--muted); font-size: 0.85rem; }
+
+.embed-root .tool-grid,
+.embed-root .field-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.embed-root .panel { padding: 0.9rem; }
+.embed-root .results-table th { width: 42%; }
+
+.embed-attribution {
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-align: right;
+}
+
+.embed-attribution a { color: var(--muted); }

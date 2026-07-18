@@ -17,6 +17,25 @@ const fmt = (v) => String(Math.round(v * 1000) / 1000);
 let currentState = null; // canonical mm state of the last computed result
 let currentOutput = null;
 let gameRecords = new Map();
+const embedRoot = $('embed-root');
+let embedHeightTimer = null;
+
+function syncEmbedAttribution() {
+  if (!embedRoot) return;
+  $('embed-attribution').href = `https://simgeometry.com/tools/fov/${location.hash}`;
+}
+
+// Height messages are write-only: the embed never inspects or listens to its
+// parent. Debouncing coalesces result rendering, game-record loading, and the
+// ResizeObserver notification that follows either change.
+function queueEmbedHeight() {
+  if (!embedRoot) return;
+  clearTimeout(embedHeightTimer);
+  embedHeightTimer = setTimeout(() => {
+    const px = Math.ceil(document.documentElement.scrollHeight);
+    window.parent.postMessage({ type: 'sim-geometry-embed-height', px }, '*');
+  }, 50);
+}
 
 const gameSlug = (name) => String(name)
   .normalize('NFKD')
@@ -191,6 +210,7 @@ async function loadGameRecords() {
     note.hidden = false;
     clearGameRecord();
   }
+  queueEmbedHeight();
 }
 
 // ---------- rendering ----------
@@ -341,6 +361,7 @@ function renderResults(state, out) {
       <strong>Can't calculate this rig.</strong> ${out.error.message}
       ${out.error.field ? `<span class="note">(input: ${out.error.field})</span>` : ''}
     </div>`;
+    queueEmbedHeight();
     return;
   }
 
@@ -387,6 +408,7 @@ function renderResults(state, out) {
   actions.hidden = false;
   actions.dataset.summary = summaryText(state, out);
   actions.dataset.json = JSON.stringify(out, null, 2);
+  queueEmbedHeight();
 }
 
 function summaryText(state, out) {
@@ -423,6 +445,8 @@ function computeFromState(state, { pushHash } = { pushHash: false }) {
   }
   renderResults(state, out);
   if (pushHash && out.ok) history.replaceState(null, '', `#${encodeStateV1(state)}`);
+  syncEmbedAttribution();
+  queueEmbedHeight();
   return out;
 }
 
@@ -461,11 +485,39 @@ function selectGame() {
   renderGameRecord(currentState, currentOutput);
   history.replaceState(null, '', `#${encodeStateV1(currentState)}`);
   $('actions').dataset.summary = summaryText(currentState, currentOutput);
+  syncEmbedAttribution();
+  queueEmbedHeight();
+}
+
+function configureEmbed() {
+  if (!embedRoot) return;
+
+  const params = new URLSearchParams(location.search);
+  const theme = ['light', 'dark', 'auto'].includes(params.get('theme'))
+    ? params.get('theme')
+    : 'auto';
+  embedRoot.classList.remove('theme-light', 'theme-dark', 'theme-auto');
+  embedRoot.classList.add(`theme-${theme}`);
+
+  const presetUnits = params.get('units');
+  if (Object.hasOwn(UNIT_TO_MM, presetUnits) && presetUnits !== $('units').value) {
+    $('units').value = presetUnits;
+    convertDisplayedUnits();
+  }
+
+  syncEmbedAttribution();
+  if ('ResizeObserver' in window) {
+    new ResizeObserver(queueEmbedHeight).observe(embedRoot);
+  } else {
+    window.addEventListener('resize', queueEmbedHeight);
+  }
+  queueEmbedHeight();
 }
 
 export function init() {
   const form = $('fov-form');
   lastUnits = $('units').value;
+  configureEmbed();
   form.addEventListener('submit', (e) => { e.preventDefault(); calculate(); });
   form.addEventListener('input', (e) => {
     if (e.target.id !== 'game') invalidateResult();

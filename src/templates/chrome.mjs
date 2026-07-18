@@ -1,6 +1,7 @@
 // Page shell. Whole-page rendering only — there is no in-place injection in this
 // repo; dist/ is always regenerated from src/.
 import { SITE } from '../site.config.mjs';
+import { renderEmbedPage } from './embed.mjs';
 
 const esc = (s) => String(s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -28,6 +29,8 @@ function isPrelaunch() {
  *  - body: main-content HTML (already escaped/authored)
  */
 export function renderPage(page) {
+  if (page.embed) return renderEmbedPage(page);
+
   const title = page.path === '/'
     ? `${SITE.name} — ${SITE.tagline.replaceAll(' · ', ', ')}`
     : `${page.title} — ${SITE.name}`;
