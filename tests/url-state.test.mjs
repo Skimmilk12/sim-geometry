@@ -74,6 +74,7 @@ test('decode: malformed fragments are rejected, never throw', () => {
     'v=1&l=s&w=1&h=1&e=1&rx=2560.5&ry=1440', // non-integer resolution
     'v=1&l=t&w=1&h=1&e=1&y=zz',       // bad yaw
     'v=1&l=s&w=1&h=1&e=1&r=heavy',    // bad radius
+    'v=1&l=s&w=1&h=1&e=1&u=feet',     // invalid value for the KNOWN units key
   ]) {
     const out = decodeStateV1(bad);
     assert.equal(out.ok, false, `should reject ${JSON.stringify(bad)}`);

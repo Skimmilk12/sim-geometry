@@ -1,7 +1,8 @@
-// Sim Geometry Lab — tool page controller. Reads the form, calls the FROZEN
-// calculateGeometryV1 facade, renders physical spans with warnings and
-// assumptions, and mirrors state into a shareable #v=1 fragment. Degrees only
-// at this presentation edge.
+// Sim Geometry Lab — tool page controller. CANONICAL-STATE architecture
+// (gate Exchange 27): the canonical state lives in millimetres in
+// `currentState`; the form is a VIEW of it. Hash restores compute from the
+// decoded state directly — never through a display-unit round trip — so a
+// share URL reproduces its result exactly. Degrees only at this edge.
 import { calculateGeometryV1 } from '../geometry/geometry.mjs';
 import { toDegrees } from '../geometry/fov.mjs';
 import { encodeStateV1, decodeStateV1 } from './url-state.mjs';
@@ -10,8 +11,12 @@ const $ = (id) => document.getElementById(id);
 const deg = (rad) => `${toDegrees(rad).toFixed(1)}°`;
 const UNIT_TO_MM = { mm: 1, cm: 10, in: 25.4 };
 const round1 = (v) => Math.round(v * 10) / 10;
+// lossless-enough display formatting: 3 decimals, trailing zeros trimmed
+const fmt = (v) => String(Math.round(v * 1000) / 1000);
 
-// ---------- form <-> state ----------
+let currentState = null; // canonical mm state of the last computed result
+
+// ---------- form -> state (user edits only) ----------
 
 function readForm() {
   const units = $('units').value;
@@ -31,30 +36,43 @@ function readForm() {
     heightMm = toMm($('height').value);
   }
 
+  const resH = $('res-h').value.trim();
+  const resV = $('res-v').value.trim();
+  if ((resH === '') !== (resV === '')) {
+    return {
+      formError: {
+        code: 'INVALID_INPUT',
+        message: 'Enter both horizontal and vertical resolution, or leave both empty.',
+        field: 'resolution',
+      },
+    };
+  }
+
   const curved = $('curved').checked;
-  const state = {
-    layout,
-    units,
-    widthMm,
-    heightMm,
-    eyeDistanceMm: toMm($('distance').value),
-    curveRadiusMm: curved ? round1(Number($('radius').value)) : null, // radius is always mm ("1800R")
-    resolution: $('res-h').value && $('res-v').value
-      ? { horizontal: Number($('res-h').value), vertical: Number($('res-v').value) }
-      : null,
-    bezelPerSideMm: layout === 'triple' ? round1(Number($('bezel').value || 0) * UNIT_TO_MM[units]) : null,
-    yaw: layout === 'triple'
-      ? ($('yaw-mode').value === 'recommended' ? 'recommended' : Number($('yaw').value) * Math.PI / 180)
-      : null,
+  return {
+    state: {
+      layout,
+      units,
+      widthMm,
+      heightMm,
+      eyeDistanceMm: toMm($('distance').value),
+      curveRadiusMm: curved ? round1(Number($('radius').value)) : null, // radius always mm ("1800R")
+      resolution: resH !== '' ? { horizontal: Number(resH), vertical: Number(resV) } : null,
+      bezelPerSideMm: layout === 'triple' ? round1(Number($('bezel').value || 0) * UNIT_TO_MM[units]) : null,
+      yaw: layout === 'triple'
+        ? ($('yaw-mode').value === 'recommended' ? 'recommended' : Number($('yaw').value) * Math.PI / 180)
+        : null,
+    },
   };
-  return state;
 }
+
+// ---------- state -> form (view only; canonical mm preserved elsewhere) ----------
 
 function writeForm(state) {
   $('units').value = state.units;
   $('layout').value = state.layout;
   $('size-mode').value = 'measured';
-  const fromMm = (v) => round1(v / UNIT_TO_MM[state.units] * 10) / 10;
+  const fromMm = (v) => fmt(v / UNIT_TO_MM[state.units]);
   $('width').value = fromMm(state.widthMm);
   $('height').value = fromMm(state.heightMm);
   $('distance').value = fromMm(state.eyeDistanceMm);
@@ -68,10 +86,11 @@ function writeForm(state) {
       $('yaw-mode').value = 'recommended';
     } else {
       $('yaw-mode').value = 'manual';
-      $('yaw').value = (toDegrees(state.yaw)).toFixed(2);
+      $('yaw').value = toDegrees(state.yaw).toFixed(2);
     }
   }
   syncVisibility();
+  syncUnitEchoes();
 }
 
 function syncVisibility() {
@@ -84,14 +103,46 @@ function syncVisibility() {
   $('diagonal-fields').hidden = measured;
 }
 
+const UNIT_LABEL = { mm: 'mm', cm: 'cm', in: 'inches' };
+function syncUnitEchoes() {
+  const u = UNIT_LABEL[$('units').value];
+  for (const el of document.querySelectorAll('[data-unit-echo]')) el.textContent = ` (${u})`;
+}
+
+// Changing units converts the DISPLAYED values so the physical rig is
+// preserved (gate finding: 25.59 in must become 650 mm, not 25.59 mm).
+let lastUnits = null;
+function convertDisplayedUnits() {
+  const next = $('units').value;
+  if (lastUnits && next !== lastUnits) {
+    for (const id of ['width', 'height', 'distance', 'bezel']) {
+      const el = $(id);
+      if (el.value.trim() !== '' && Number.isFinite(Number(el.value))) {
+        const mm = Number(el.value) * UNIT_TO_MM[lastUnits];
+        el.value = fmt(mm / UNIT_TO_MM[next]);
+      }
+    }
+  }
+  lastUnits = next;
+  syncUnitEchoes();
+}
+
 // ---------- rendering ----------
 
 function row(label, value, note = '') {
   return `<tr><th scope="row">${label}</th><td data-num>${value}</td><td class="note">${note}</td></tr>`;
 }
 
+function hideActions() {
+  const a = $('actions');
+  a.hidden = true;
+  delete a.dataset.summary;
+  delete a.dataset.json;
+}
+
 function renderResults(state, out) {
   const box = $('results');
+  hideActions();
   if (!out.ok) {
     box.innerHTML = `<div class="alert alert-error" role="alert">
       <strong>Can't calculate this rig.</strong> ${out.error.message}
@@ -105,8 +156,8 @@ function renderResults(state, out) {
     <div class="alert alert-warn" role="status"><strong>${w.code.replaceAll('_', ' ').toLowerCase()}:</strong> ${w.message}</div>`).join('');
 
   const sens = (s) => {
-    const fmt = (p) => (p.rad !== null ? deg(p.rad) : `unavailable (${p.unavailable.code})`);
-    return `at ±${s.deltaMm} mm eye-distance error: ${fmt(s.near)} … ${fmt(s.far)}`;
+    const f = (p) => (p.rad !== null ? deg(p.rad) : `unavailable (${p.unavailable.code})`);
+    return `at ±${s.deltaMm} mm eye-distance error: ${f(s.near)} … ${f(s.far)}`;
   };
 
   let rows = '';
@@ -130,16 +181,17 @@ function renderResults(state, out) {
   }
 
   box.innerHTML = `${warn}
-    <table class="results-table"><caption class="sr-only">Calculated physical spans</caption>${rows}</table>
+    <div class="table-wrap"><table class="results-table"><caption class="sr-only">Calculated physical spans</caption>${rows}</table></div>
     <p class="note">These are <strong>physical angular spans</strong>, not game FOV settings. Per-game
     conversion records — each with its source and verification date — ship with the game dataset.</p>
     <details><summary>Assumptions behind these numbers</summary>
       <ul>${out.assumptions.map((a) => `<li><code>${a}</code></li>`).join('')}</ul>
     </details>`;
 
-  $('actions').hidden = false;
-  $('actions').dataset.summary = summaryText(state, out);
-  $('actions').dataset.json = JSON.stringify(out, null, 2);
+  const actions = $('actions');
+  actions.hidden = false;
+  actions.dataset.summary = summaryText(state, out);
+  actions.dataset.json = JSON.stringify(out, null, 2);
 }
 
 function summaryText(state, out) {
@@ -151,15 +203,11 @@ function summaryText(state, out) {
   return `${head}\n${body}\n${location.origin}/tools/fov/#${encodeStateV1(state)}`;
 }
 
-// ---------- wiring ----------
+// ---------- compute paths ----------
 
-function calculate({ pushHash = true } = {}) {
-  let state;
-  try {
-    state = readForm();
-  } catch {
-    return;
-  }
+// From canonical state (hash restore, share reproduction) — no form reread.
+function computeFromState(state, { pushHash } = { pushHash: false }) {
+  currentState = state;
   const input = {
     layout: state.layout,
     screen: { widthMm: state.widthMm, heightMm: state.heightMm },
@@ -173,23 +221,40 @@ function calculate({ pushHash = true } = {}) {
   const out = calculateGeometryV1(input);
   renderResults(state, out);
   if (pushHash && out.ok) history.replaceState(null, '', `#${encodeStateV1(state)}`);
+  return out;
+}
+
+// From user-submitted form.
+function calculate() {
+  const read = readForm();
+  if (read.formError) {
+    renderResults(null, { ok: false, error: read.formError });
+    return;
+  }
+  computeFromState(read.state, { pushHash: true });
 }
 
 function restoreFromHash() {
   const decoded = decodeStateV1(location.hash);
   if (!decoded.ok) return false;
   writeForm(decoded.state);
-  calculate({ pushHash: false });
+  lastUnits = decoded.state.units;
+  computeFromState(decoded.state, { pushHash: false });
   return true;
 }
 
 export function init() {
   const form = $('fov-form');
+  lastUnits = $('units').value;
   form.addEventListener('submit', (e) => { e.preventDefault(); calculate(); });
-  form.addEventListener('change', () => { syncVisibility(); });
+  form.addEventListener('change', (e) => {
+    if (e.target.id === 'units') convertDisplayedUnits();
+    syncVisibility();
+  });
   $('copy-link').addEventListener('click', async () => {
-    calculate();
-    await navigator.clipboard.writeText(location.href);
+    if (!currentState) calculate();
+    if (!currentState) return;
+    await navigator.clipboard.writeText(`${location.origin}/tools/fov/#${encodeStateV1(currentState)}`);
     $('copy-link').textContent = 'Link copied';
     setTimeout(() => { $('copy-link').textContent = 'Copy share link'; }, 1500);
   });
@@ -201,6 +266,7 @@ export function init() {
   });
   window.addEventListener('hashchange', restoreFromHash);
   syncVisibility();
+  syncUnitEchoes();
   restoreFromHash();
 }
 

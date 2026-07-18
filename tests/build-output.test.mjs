@@ -35,6 +35,11 @@ test('prelaunch build: robots noindex, canonical, stylesheets, .nojekyll, skip l
     assert.match(home, /aria-disabled="true"/, 'soon items are marked disabled');
     assert.doesNotMatch(home, /style="/, 'no inline styles in generated pages');
     assert.match(home, /googletagmanager\.com\/gtag\/js\?id=G-MPKRBBQCHF/, 'GA4 stream wired');
+    // mojibake guard: UTF-8 bytes read as ANSI leave â€ sequences (the PS5.1 trap)
+    for (const page of ['index.html', 'tools/fov/index.html']) {
+      const html = fs.readFileSync(path.join(out, page), 'utf8');
+      assert.doesNotMatch(html, /â€|Ã©|Â°/, `${page} carries no encoding mojibake`);
+    }
   } finally {
     fs.rmSync(out, { recursive: true, force: true });
   }

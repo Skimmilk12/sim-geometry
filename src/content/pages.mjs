@@ -36,7 +36,7 @@ const FOV_TOOL_BODY = `
           <div class="field-row">
             <div class="field">
               <label for="diagonal">Diagonal (inches)</label>
-              <input id="diagonal" type="number" step="0.1" min="10" max="100" value="27" required>
+              <input id="diagonal" type="number" step="any" min="10" max="100" value="27" required>
             </div>
             <div class="field">
               <label for="aspect">Aspect ratio</label>
@@ -52,19 +52,19 @@ const FOV_TOOL_BODY = `
         <div id="measured-fields" hidden>
           <div class="field-row">
             <div class="field">
-              <label for="width">Visible width</label>
-              <input id="width" type="number" step="0.1" min="1">
+              <label for="width">Visible width<span data-unit-echo></span></label>
+              <input id="width" type="number" step="any" min="1">
             </div>
             <div class="field">
-              <label for="height">Visible height</label>
-              <input id="height" type="number" step="0.1" min="1">
+              <label for="height">Visible height<span data-unit-echo></span></label>
+              <input id="height" type="number" step="any" min="1">
             </div>
           </div>
         </div>
 
         <div class="field">
-          <label for="distance">Eye-to-screen-center distance</label>
-          <input id="distance" type="number" step="0.1" min="1" value="24" required>
+          <label for="distance">Eye-to-screen-center distance<span data-unit-echo></span></label>
+          <input id="distance" type="number" step="any" min="1" value="24" required>
         </div>
 
         <div class="field-check">
@@ -89,8 +89,8 @@ const FOV_TOOL_BODY = `
 
         <div id="triple-fields" hidden>
           <div class="field">
-            <label for="bezel">Bezel per side (visible image to cabinet edge)</label>
-            <input id="bezel" type="number" step="0.1" min="0" value="0.3">
+            <label for="bezel">Bezel per side, visible image to cabinet edge<span data-unit-echo></span></label>
+            <input id="bezel" type="number" step="any" min="0" value="0.3">
           </div>
           <div class="field-row">
             <div class="field">

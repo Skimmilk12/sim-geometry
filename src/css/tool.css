@@ -48,5 +48,7 @@
 .alert-warn { border: 1px solid var(--warn); background: color-mix(in srgb, var(--warn) 8%, var(--surface)); }
 
 .tool-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.9rem; }
+.tool-actions[hidden] { display: none; } /* display:flex must not defeat the hidden attribute */
+.table-wrap { overflow-x: auto; max-width: 100%; }
 details summary { cursor: pointer; color: var(--muted); font-size: 0.86rem; margin-top: 0.6rem; }
 details ul { margin: 0.4rem 0 0; }

@@ -57,7 +57,12 @@ export function decodeStateV1(fragment) {
 
   const layout = { s: 'single', t: 'triple' }[p.get('l')];
   if (!layout) return { ok: false, reason: 'bad layout' };
-  const units = ['mm', 'cm', 'in'].includes(p.get('u')) ? p.get('u') : 'mm';
+  // Unknown KEYS are ignored (forward compatibility); invalid VALUES for the
+  // known u key are rejected. Absent u defaults to mm.
+  if (p.has('u') && !['mm', 'cm', 'in'].includes(p.get('u'))) {
+    return { ok: false, reason: 'bad units' };
+  }
+  const units = p.get('u') ?? 'mm';
 
   const widthMm = num(p.get('w'));
   const heightMm = num(p.get('h'));
