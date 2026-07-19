@@ -7,6 +7,9 @@ export const SITE = {
   ga4: 'G-MPKRBBQCHF',
   brand: 'SIM GEOMETRY',
   tagline: 'measurements · compatibility · cost',
+  // Homepage <title>: keyword-first (the calculator cluster is the head query),
+  // brand appended by the template.
+  homeTitle: 'Sim Racing FOV Calculator & Wheelbase Specs',
   credo: 'Measurements, compatibility, and cost — without invented experience.',
   org: 'Sim Geometry Research Desk',
   // Custom-domain canonical is intentional during prelaunch; at launch,

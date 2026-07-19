@@ -136,7 +136,7 @@ export const GUIDES = [
   },
   {
     slug: 'iracing-fov-and-triples',
-    title: 'iRacing FOV and triple-screen geometry',
+    title: 'iRacing FOV calculator: settings and triple-screen geometry',
     homeTitle: 'Enter the right iRacing FOV',
     description: 'Map measured single and triple-screen geometry into iRacing’s FOV controls, including its built-in calculator and three-projection rendering mode correctly.',
     dek: 'For a single display, map the physical horizontal span. For native triples, map the full visible envelope across all three projections—not the center panel alone.',
@@ -192,7 +192,7 @@ export const GUIDES = [
   },
   {
     slug: 'acc-fov-vertical',
-    title: 'ACC FOV: vertical convention and triple-screen history',
+    title: 'ACC FOV calculator: the vertical convention and triples',
     homeTitle: 'Choose the right ACC FOV value',
     description: 'Understand ACC’s vertical FOV convention, the historical 505 single-span guidance, current Triple Screen mode, and when Pannini correction applies today.',
     dek: 'ACC’s single-display field is treated as vertical FOV. Its triple story changed: a historical stretched-span answer now sits beside a distinct Triple Screen rendering mode.',

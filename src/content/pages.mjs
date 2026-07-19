@@ -354,7 +354,7 @@ export const PAGES = [
   ...WHEELBASE_PAGES,
   {
     path: '/tools/fov/',
-    title: 'FOV Calculator — flat, curved & triple screens',
+    title: 'Sim Racing FOV Calculator — flat, curved & triple screens',
     description:
       'A dedicated sim-racing FOV geometry lab with canonical share state, annotated calculations, game-convention evidence, and flat, curved, or triple-screen results.',
     styles: ['/styles/tool.css'],

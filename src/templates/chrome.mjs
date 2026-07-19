@@ -33,7 +33,7 @@ export function renderPage(page) {
   if (page.embed) return renderEmbedPage(page);
 
   const title = page.path === '/'
-    ? `${SITE.name} — ${SITE.tagline.replaceAll(' · ', ', ')}`
+    ? `${SITE.homeTitle} — ${SITE.name}`
     : `${page.title} — ${SITE.name}`;
   const robots = isPrelaunch() ? 'noindex, nofollow' : (page.robots || 'index, follow');
   const canonical = SITE.base.replace(/\/$/, '') + page.path;
