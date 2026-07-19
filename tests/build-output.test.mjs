@@ -52,6 +52,11 @@ test('launched build: robots indexable, canonical, stylesheets, .nojekyll, skip 
     assert.notEqual(metaDescription(home), metaDescription(tool), 'home and canonical tool descriptions stay distinct');
     assert.match(home, /<h1>Get the right view for your rig\.<\/h1>/);
     assert.match(tool, /<h1>Get the FOV your rig actually covers\.<\/h1>/);
+    assert.match(tool, /Supported games/, 'tool page carries the crawlable games section');
+    assert.match(tool, /Assetto Corsa Competizione \(ACC\) FOV calculator/);
+    assert.match(tool, /Le Mans Ultimate \(LMU\) FOV calculator/);
+    assert.doesNotMatch(tool, /Gran Turismo 7 FOV calculator|EA Sports F1[^<]*FOV calculator/,
+      'no-conversion games are never advertised as calculator targets');
     assert.ok(fs.existsSync(path.join(out, '.nojekyll')), '.nojekyll present');
     assert.ok(fs.existsSync(path.join(out, 'styles/base.css')), 'css copied');
     assert.doesNotMatch(home, /aria-disabled="true"|Upgrade Planner/,

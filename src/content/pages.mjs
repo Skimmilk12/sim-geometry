@@ -1,7 +1,47 @@
 // Page registry: every static page the build renders. Bodies are authored HTML.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { GUIDES, GUIDE_HUB_PAGE, GUIDE_PAGES } from './guides.mjs';
 import { WHEELBASE_PAGES } from './wheelbases.mjs';
 import { SITE } from '../site.config.mjs';
+
+// ---------- crawlable supported-games section ----------
+// The calculator builds its game picker from this same dataset at runtime;
+// this static mirror exists so the per-game coverage is visible to crawlers
+// and linkable with prefilled example states.
+const CONTENT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const GAME_DATA = JSON.parse(fs.readFileSync(path.join(CONTENT_ROOT, 'src', 'data', 'game-fov-conventions.v1.json'), 'utf8'));
+const gameSlug = (name) => String(name).normalize('NFKD').toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const GAME_ABBREV = {
+  'assetto-corsa-competizione': 'ACC',
+  'automobilista-2': 'AMS2',
+  'rfactor-2': 'rF2',
+  'le-mans-ultimate': 'LMU',
+  'raceroom-racing-experience': 'RaceRoom',
+};
+// Same 27-inch example state the guides link; visitors swap in their own numbers.
+const GAME_EXAMPLE_STATE = 'v=1&amp;l=s&amp;u=mm&amp;w=597.7&amp;h=336.2&amp;e=600&amp;rx=2560&amp;ry=1440';
+const gameLabel = (rec) => {
+  const abbrev = GAME_ABBREV[gameSlug(rec.game)];
+  return `${rec.game}${abbrev ? ` (${abbrev})` : ''}`;
+};
+const SUPPORTED_GAMES_SECTION = `
+    <section class="panel copy prose-panel">
+      <h2>Supported games</h2>
+      <p>The calculator converts your physical geometry into each game's own FOV convention —
+      every conversion is sourced and dated inside the tool. Open it prefilled with the 27-inch
+      example measurements (swap in your own) for:</p>
+      <ul>
+${GAME_DATA.records.filter((r) => r.status === 'convertible').map((rec) => `        <li><a href="/tools/fov/#${GAME_EXAMPLE_STATE}&amp;g=${gameSlug(rec.game)}">${gameLabel(rec)} FOV calculator</a><span class="note">${rec.convention?.axis ? ` — ${rec.convention.axis} convention` : ' — physical-geometry calibration'}; sets "${rec.settingName}"</span></li>`).join('\n')}
+      </ul>
+      <p>Also documented, but not converted — these games' FOV sliders are unitless or undocumented,
+      so any number would be invented. The calculator still gives you your physical spans:</p>
+      <ul>
+${GAME_DATA.records.filter((r) => r.status !== 'convertible').map((rec) => `        <li>${rec.game}<span class="note">${rec.settingName ? ` — ${rec.settingName}` : ''}</span></li>`).join('\n')}
+      </ul>
+    </section>`;
 // The production calculator is generated here once, then shared by the homepage,
 // the canonical tool route, and (with its share-card action omitted) the embed.
 function fovCalculatorBody({ embed = false } = {}) {
@@ -190,7 +230,8 @@ const FOV_TOOL_BODY = `
       <h1>Get the FOV your rig actually covers.</h1>
       <p class="dek">Enter your screen and seating measurements to get physical horizontal and vertical spans, a ±10 mm distance band, and the matching game convention when verified.</p>
     </section>
-${FOV_CALCULATOR_BODY}`;
+${FOV_CALCULATOR_BODY}
+${SUPPORTED_GAMES_SECTION}`;
 
 const FOV_EMBED_BODY = `
   <div id="embed-root" class="embed-root theme-auto">
