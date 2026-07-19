@@ -104,7 +104,10 @@ function hubBody(data) {
     <p class="note">We have not driven these products — every number here is from the maker's own
     published pages, and each sheet links its sources with retrieval dates. Prices are official-store
     USD list prices; a "—" means no price from a permitted source (the sheet says why). A "base only"
-    unit needs at least a wheel rim before you can drive.</p>`;
+    unit needs at least a wheel rim before you can drive.</p>
+    <p class="note">Console player? The sourced compatibility answers:
+    <a href="/compatibility/ps5-racing-wheels/">which wheels work on PS5</a> ·
+    <a href="/compatibility/moza-xbox/">which MOZA setups work on Xbox</a>.</p>`;
 }
 
 // ---------- record pages ----------

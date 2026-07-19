@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { GUIDES, GUIDE_HUB_PAGE, GUIDE_PAGES } from './guides.mjs';
 import { WHEELBASE_PAGES } from './wheelbases.mjs';
 import { COMPARE_PAGES } from './compare.mjs';
+import { COMPAT_PAGES } from './compatibility.mjs';
 import { SITE } from '../site.config.mjs';
 
 // ---------- crawlable supported-games section ----------
@@ -395,6 +396,7 @@ export const PAGES = [
   ...GUIDE_PAGES,
   ...WHEELBASE_PAGES,
   ...COMPARE_PAGES,
+  ...COMPAT_PAGES,
   {
     path: '/tools/fov/',
     title: 'Sim Racing FOV Calculator — flat, curved & triple screens',

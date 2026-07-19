@@ -311,7 +311,7 @@
       ],
       "confidence": "medium",
       "lastVerified": "2026-07-18",
-      "notes": "MOZA's R9 support page is internally inconsistent: its spec table says Xbox-ready via ESX while its R9 V3 FAQ says PC-only. The conditional Xbox entry follows MOZA's newer general wheel-base FAQ. Weight and slew rate are not published for V3 (nulls). USB refresh 1000 Hz."
+      "notes": "MOZA's R9 support page is internally inconsistent: its spec table says Xbox-ready via ESX while its R9 V3 FAQ says PC-only. The conditional Xbox entry follows MOZA's general wheel-base FAQ. Weight and slew rate are not published for V3 (nulls). USB refresh 1000 Hz."
     },
     {
       "brand": "MOZA Racing",

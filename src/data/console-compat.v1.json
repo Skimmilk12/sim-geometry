@@ -1,0 +1,57 @@
+{
+  "version": "1.0.0",
+  "dataset": "console-compat-legacy-wheels",
+  "license": "CC BY 4.0",
+  "method": "Platform statements for non-wheelbase products referenced by the compatibility pages. Direct-drive wheelbases are covered by wheelbases.v1.json; this file exists only for the legacy geared/belt wheels people upgrade from. Same rules: manufacturer sources with retrieval dates, null-beats-guess.",
+  "records": [
+    {
+      "product": "Logitech G29 Driving Force",
+      "maker": "Logitech G",
+      "platforms": {
+        "pc": true,
+        "ps": { "supported": true, "condition": "PlayStation-licensed - Logitech's store page lists PS5, PS4, PS3, and PC. A platform mode switch selects PS4, PS3, or PC operation; PS5 use is in PS5 games that support the wheel." },
+        "xbox": { "supported": false, "condition": "No Xbox support - the G920 is the Xbox counterpart" }
+      },
+      "sources": [
+        { "url": "https://www.logitechg.com/en-us/shop/p/driving-force-racing-wheel", "kind": "manufacturer store", "retrieved": "2026-07-19", "covers": ["platforms"] },
+        { "url": "https://support.logi.com/hc/en-us/articles/360023181054-Set-the-G29-racing-wheel-for-PlayStation-4-PlayStation-3-or-PC-platforms", "kind": "manufacturer support doc", "retrieved": "2026-07-19", "covers": ["platform mode switch", "PS4/PS3/PC"] },
+        { "url": "https://support.logi.com/hc/en-us/articles/360051040854-Logitech-G923-G29-G920-Driving-Force-Racing-Wheel-Game-Compatibility-List", "kind": "manufacturer support doc", "retrieved": "2026-07-19", "covers": ["PlayStation 5 & 4 grouping"] }
+      ],
+      "confidence": "high",
+      "lastVerified": "2026-07-19",
+      "notes": "Logitech's store page states PS5/PS4/PS3/PC for the G29 explicitly; the game-compatibility list's 'PlayStation 5 & 4' column corroborates. The mode-switch article predates PS5 and covers PS4/PS3/PC operation."
+    },
+    {
+      "product": "Logitech G920 Driving Force",
+      "maker": "Logitech G",
+      "platforms": {
+        "pc": true,
+        "ps": { "supported": false, "condition": "No PlayStation support - PlayStation appears nowhere on Logitech's G920 specifications page; the G29 and the G923 PlayStation version are the PlayStation counterparts" },
+        "xbox": { "supported": true, "condition": "Xbox Series X|S and Xbox One (Logitech specifications page)" }
+      },
+      "sources": [
+        { "url": "https://support.logi.com/hc/en-us/articles/360023304114-G920-Driving-Force-Racing-Wheel-Technical-Specifications", "kind": "manufacturer support doc", "retrieved": "2026-07-19", "covers": ["platforms", "Xbox Series X|S", "Windows 10/11"] }
+      ],
+      "confidence": "high",
+      "lastVerified": "2026-07-19",
+      "notes": "Spec page lists Windows 10/11 and Xbox Series X|S / Xbox One explicitly."
+    },
+    {
+      "product": "Logitech G923 TRUEFORCE",
+      "maker": "Logitech G",
+      "platforms": {
+        "pc": true,
+        "ps": { "supported": true, "condition": "Only the PlayStation/PC version - Logitech's own download page titles it 'for PS5, PS4, and PC'" },
+        "xbox": { "supported": true, "condition": "Only the separately sold Xbox/PC version - Logitech's specification page titles it 'for Xbox One and PC'" }
+      },
+      "sources": [
+        { "url": "https://www.logitechg.com/en-us/shop/p/g923-trueforce-sim-racing-wheel", "kind": "manufacturer store", "retrieved": "2026-07-19", "covers": ["versions"] },
+        { "url": "https://support.logi.com/hc/en-us/articles/360052210134-Download-G923-TRUEFORCE-Sim-Racing-Wheel-for-PS5-PS4-and-PC", "kind": "manufacturer support doc", "retrieved": "2026-07-19", "covers": ["PS5/PS4/PC version"] },
+        { "url": "https://support.logi.com/hc/en-us/articles/17207101115799-Specification-G923-TRUEFORCE-Sim-Racing-Wheel-for-Xbox-One-and-PC", "kind": "manufacturer support doc", "retrieved": "2026-07-19", "covers": ["Xbox One/PC version"] }
+      ],
+      "confidence": "high",
+      "lastVerified": "2026-07-19",
+      "notes": "The console license is fixed by which version you buy; the two versions are separate SKUs."
+    }
+  ]
+}
