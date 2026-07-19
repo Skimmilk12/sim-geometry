@@ -44,7 +44,7 @@ const CLAIM_LABELS = {
 };
 const claimLabel = (t) => CLAIM_LABELS[t?.claimType] ?? (t?.claimType || '');
 
-function torqueCell(t) {
+export function torqueCell(t) {
   // Some bases publish only a holding/constant figure (ClubSport DD, T818) —
   // never render those as "not disclosed".
   if (!t || (t.peakNm === null && t.holdingNm === null)) return '—';
@@ -109,7 +109,7 @@ function hubBody(data) {
 
 // ---------- record pages ----------
 
-function sourceLinks(rec) {
+export function sourceLinks(rec) {
   return rec.sources.map((s, i) =>
     `<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.kind)}</a>${s.covers?.length ? ` <span class="note">${esc(s.covers.join(', '))}</span>` : ''} <span class="note">retrieved ${esc(s.retrieved)}</span></li>`).join('\n');
 }
@@ -124,9 +124,19 @@ function consoleLine(c) {
   return c.condition ? `Yes <span class="note">— ${esc(c.condition)}</span>` : 'Yes';
 }
 
+// Curated comparisons that feature a record (static to avoid an import cycle
+// with compare.mjs; extend when a new demand-justified pair ships).
+const RECORD_COMPARES = {
+  'R3 Racing Bundle': { href: '/compare/moza-r3-vs-r5/', label: 'MOZA R3 vs R5 — the factual comparison' },
+  'R5 Racing Bundle': { href: '/compare/moza-r3-vs-r5/', label: 'MOZA R3 vs R5 — the factual comparison' },
+};
+
 function recordBody(rec) {
   const needs = rec.requiredNotIncluded.length
     ? `<div class="alert alert-warn">To actually drive, you still need: ${rec.requiredNotIncluded.map(esc).join(' · ')}</div>`
+    : '';
+  const compare = RECORD_COMPARES[rec.model]
+    ? `<p class="note">Compared spec-by-spec: <a href="${RECORD_COMPARES[rec.model].href}">${esc(RECORD_COMPARES[rec.model].label)}</a></p>`
     : '';
 
   return `
@@ -137,6 +147,7 @@ function recordBody(rec) {
     ${rec.productType === 'bundle' ? 'sold as a bundle' : 'base only'}${rec.lifecycle !== 'current' ? ` · <strong>${esc(rec.lifecycle)}</strong>` : ''}</p>
     <p class="note">We have not driven this product. Every figure below comes from the linked
     manufacturer sources, each with its retrieval date.</p>
+    ${compare}
     ${needs}
     <div class="table-wrap"><table class="results-table">
       <caption class="sr-only">Specifications</caption>

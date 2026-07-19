@@ -237,7 +237,8 @@
       "priceUSD": { "amount": null, "source": null, "retrieved": "2026-07-18", "note": "No price is shown because no permitted price source exists for MOZA yet; MOZA's official US store lists current pricing" },
       "sources": [
         { "url": "https://us.mozaracing.com/products/r3-racing-bundle-xbox", "kind": "manufacturer US store", "retrieved": "2026-07-18", "covers": ["torque", "encoder", "included", "platforms"] },
-        { "url": "https://support.mozaracing.com/en/support/solutions/articles/70000668605-moza-r3-wheel-base-support", "kind": "manufacturer support page", "retrieved": "2026-07-18", "covers": ["torque", "encoder", "mounting", "warranty"] }
+        { "url": "https://support.mozaracing.com/en/support/solutions/articles/70000668605-moza-r3-wheel-base-support", "kind": "manufacturer support page", "retrieved": "2026-07-18", "covers": ["torque", "encoder", "mounting", "warranty"] },
+        { "url": "https://support.mozaracing.com/en/support/solutions/articles/70000627811-wheel-base-faqs", "kind": "manufacturer compatibility FAQ", "retrieved": "2026-07-18", "covers": ["platforms", "PlayStation", "Xbox condition"] }
       ],
       "confidence": "high",
       "lastVerified": "2026-07-18",
@@ -270,7 +271,8 @@
       "priceUSD": { "amount": null, "source": null, "retrieved": "2026-07-18", "note": "No price is shown because no permitted price source exists for MOZA yet; MOZA's official US store lists current pricing" },
       "sources": [
         { "url": "https://us.mozaracing.com/products/r5-racing-bundle", "kind": "manufacturer US store", "retrieved": "2026-07-18", "covers": ["torque", "encoder", "rotation", "included"] },
-        { "url": "https://support.mozaracing.com/en/support/solutions/articles/70000668745-moza-r5-wheel-base-support", "kind": "manufacturer support page", "retrieved": "2026-07-18", "covers": ["dimensions", "weight", "psu", "platforms", "warranty"] }
+        { "url": "https://support.mozaracing.com/en/support/solutions/articles/70000668745-moza-r5-wheel-base-support", "kind": "manufacturer support page", "retrieved": "2026-07-18", "covers": ["dimensions", "weight", "psu", "platforms", "warranty"] },
+        { "url": "https://support.mozaracing.com/en/support/solutions/articles/70000627811-wheel-base-faqs", "kind": "manufacturer compatibility FAQ", "retrieved": "2026-07-18", "covers": ["platforms", "PlayStation", "Xbox condition"] }
       ],
       "confidence": "medium",
       "lastVerified": "2026-07-18",
