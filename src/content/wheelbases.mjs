@@ -187,14 +187,33 @@ export const WHEELBASE_DATA = data;
 export const WHEELBASE_PAGES = data === null ? [] : [
   {
     path: '/wheelbases/',
-    title: `Direct-drive wheelbase specs & prices — ${data.records.length} bases compared`,
-    description: `Official specs and current prices for ${data.records.length} direct-drive sim racing wheelbases: torque, platforms, quick release, what's in the box — every number sourced and dated.`,
+    title: `${data.records.length} direct-drive wheelbases: specs and prices`,
+    description: `Official specs and prices for ${data.records.length} direct-drive sim racing wheelbases: torque, platforms, quick release, what's in the box — every number sourced and dated.`,
     body: hubBody(data),
   },
-  ...data.records.map((rec) => ({
-    path: recordPath(rec),
-    title: `${displayName(rec)}${rec.variant ? ` ${rec.variant}` : ''} — specs, price, compatibility`,
-    description: `${displayName(rec)}: ${rec.torque?.peakNm ?? rec.torque?.holdingNm ?? 'direct-drive'}${typeof (rec.torque?.peakNm ?? rec.torque?.holdingNm) === 'number' ? ' Nm' : ''} wheelbase — official specs, current price, platform support, and what you still need to buy, with sources.`,
-    body: recordBody(rec),
-  })),
+  ...data.records.map((rec) => {
+    // SERP-length titles (≤65 chars with the site suffix): short model name,
+    // short variant only when brief, and the torque figure so one-fact
+    // lookups ("moza r5 nm") resolve on the title alone. The full name and
+    // variant remain in the page H1 and dek.
+    const nm = rec.torque?.peakNm ?? rec.torque?.holdingNm;
+    const shortModel = rec.model
+      .replace(/ Direct Drive Wheelbase$/, '')
+      .replace(/ Racing Bundle$/, '')
+      .replace(/ Wheel Base /, ' ');
+    const shortName = shortModel.startsWith(rec.brand) ? shortModel : `${rec.brand} ${shortModel}`;
+    const shortVariant = rec.variant && rec.variant.length <= 18 ? ` ${rec.variant}` : '';
+    // titleNote (dataset field) preserves a material qualifier the dropped
+    // long variant carried — e.g. R3's Xbox licensing, T598's PS/PC SKU.
+    const note = rec.titleNote;
+    const torqueTag = nm != null && !`${shortName}${shortVariant}`.includes(`${nm} Nm`)
+      ? ` (${nm} Nm${note ? `, ${note}` : ''})`
+      : (note ? ` (${note})` : '');
+    return {
+      path: recordPath(rec),
+      title: `${shortName}${shortVariant}${torqueTag} specs`,
+      description: `${displayName(rec)}: ${nm ?? 'direct-drive'}${typeof nm === 'number' ? ' Nm' : ''} wheelbase — official specs, ${rec.dimensions ? 'dimensions, ' : ''}price availability, platforms, and what's still needed. Sourced.`,
+      body: recordBody(rec),
+    };
+  }),
 ];

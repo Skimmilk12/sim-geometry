@@ -85,7 +85,8 @@ function ps5Body() {
     </table></div>
     <p class="note">MOZA owner wondering about PlayStation? The direct answer:
     <a href="/compatibility/moza-ps5/">is MOZA compatible with PS5</a>. Xbox player:
-    <a href="/compatibility/moza-xbox/">which MOZA setups work on Xbox</a>.</p>
+    <a href="/compatibility/moza-xbox/">which MOZA setups work on Xbox</a>. Coming from a G29?
+    <a href="/upgrades/logitech-g29/">The upgrade paths that keep PlayStation</a>.</p>
     <details><summary>Legacy-wheel sources (Logitech G29/G920/G923)</summary>
       <ul>${legacySources()}</ul>
       <p class="note">Last verified ${esc(LEGACY.records[0].lastVerified)}. Wheelbase rows link their
@@ -190,20 +191,20 @@ function mozaPs5Body() {
 export const COMPAT_PAGES = WHEELBASE_DATA === null ? [] : [
   {
     path: '/compatibility/ps5-racing-wheels/',
-    title: 'Which racing wheels work on PS5? The sourced compatibility table',
-    description: 'PS5 racing wheel compatibility with dated sources: which wheels and wheelbases are PlayStation-licensed, which version you need, and which brands publish no PlayStation support.',
+    title: 'Which racing wheels work on PS5?',
+    description: 'PS5 racing wheel compatibility with dated sources: which wheels are PlayStation-licensed, which version you need, and which brands publish no PS support.',
     body: ps5Body(),
   },
   {
     path: '/compatibility/moza-xbox/',
-    title: 'Which MOZA setups work on Xbox? The ESX rule, base by base',
-    description: 'MOZA Xbox compatibility, sourced: the license lives in the Xbox-licensed ESX wheel, so the R3 bundle works as sold while R5/R9/R12 need the separately purchased ESX wheel. Every answer linked to MOZA’s own pages.',
+    title: 'Which MOZA setups work on Xbox?',
+    description: 'MOZA Xbox compatibility, sourced: the license lives in the Xbox-licensed ESX wheel — the R3 bundle works as sold; other bases need the ESX wheel added.',
     body: mozaXboxBody(),
   },
   {
     path: '/compatibility/moza-ps5/',
-    title: 'Is MOZA compatible with PS5? The sourced answer',
-    description: 'MOZA publishes no PlayStation support for any wheelbase in our dataset, and no version adds it. What MOZA’s own pages say, why adapter claims are the vendors’ and not MOZA’s, and the sourced list of wheels that do work on PS5.',
+    title: 'Is MOZA compatible with PS5?',
+    description: 'MOZA publishes no PlayStation support for any wheelbase in our dataset. What MOZA’s pages say, why adapter claims are the vendors’ own, and what works on PS5.',
     body: mozaPs5Body(),
   },
 ];

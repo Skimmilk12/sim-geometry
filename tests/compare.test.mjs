@@ -38,9 +38,9 @@ if (WHEELBASE_DATA === null) {
     // record cross-links, both directions
     assert.match(page.body, /href="\/wheelbases\/moza-racing\/r3-racing-bundle/);
     assert.match(page.body, /href="\/wheelbases\/moza-racing\/r5-racing-bundle/);
-    for (const model of ['R3 Racing Bundle', 'R5 Racing Bundle']) {
-      const recPage = WHEELBASE_PAGES.find((p) => p.body?.includes(`>${model}`) || p.title.includes(model));
-      assert.ok(recPage?.body.includes('href="/compare/moza-r3-vs-r5/"'), `${model} record page links back to the comparison`);
+    for (const slug of ['r3-racing-bundle', 'r5-racing-bundle']) {
+      const recPage = WHEELBASE_PAGES.find((p) => p.path.includes(`/moza-racing/${slug}`));
+      assert.ok(recPage?.body.includes('href="/compare/moza-r3-vs-r5/"'), `${slug} record page links back to the comparison`);
     }
     // the claims the page makes, verbatim-checked
     for (const claim of [/3\.9 Nm/, /5\.5 Nm/, /60 W/, /84 W/, /15-bit/, /ESX/, /\bES wheel\b/, /SR-P Lite/, /50 mm/]) {

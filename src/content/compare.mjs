@@ -16,7 +16,7 @@ const COMPARISONS = [
     b: { model: 'R5 Racing Bundle' },
     title: 'MOZA R3 vs R5 — the factual spec comparison',
     h1: 'MOZA R3 vs R5, spec by spec.',
-    description: 'MOZA R3 vs R5 compared on published specs only: torque, the Xbox difference, what each bundle includes, dimensions, and what you still need — every number from MOZA’s own pages.',
+    description: 'MOZA R3 vs R5 on published specs only: torque, the Xbox difference, what each bundle includes, and what you still need — sourced from MOZA’s pages.',
     dek: 'Published specs only, side by side: torque, platforms, what is actually in each box, and the Xbox compatibility difference between the two bundles.',
     // The single biggest factual difference, stated as facts (this also answers
     // the "moza r5 xbox" question cluster honestly).

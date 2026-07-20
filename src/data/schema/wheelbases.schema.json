@@ -19,6 +19,7 @@
           "brand": { "type": "string", "minLength": 1 },
           "model": { "type": "string", "minLength": 1 },
           "variant": { "type": ["string", "null"] },
+          "titleNote": { "type": "string", "minLength": 1, "description": "Optional short qualifier preserved in the page title when the long variant is dropped (e.g. Xbox, PS/PC)" },
           "lifecycle": { "enum": ["current", "discontinued", "announced"] },
           "productType": { "enum": ["base", "bundle"] },
           "motorType": { "type": ["string", "null"] },

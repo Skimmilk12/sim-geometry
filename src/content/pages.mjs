@@ -6,6 +6,7 @@ import { GUIDES, GUIDE_HUB_PAGE, GUIDE_PAGES } from './guides.mjs';
 import { WHEELBASE_PAGES } from './wheelbases.mjs';
 import { COMPARE_PAGES } from './compare.mjs';
 import { COMPAT_PAGES } from './compatibility.mjs';
+import { UPGRADE_PAGES } from './upgrades.mjs';
 import { SITE } from '../site.config.mjs';
 
 // ---------- crawlable supported-games section ----------
@@ -43,6 +44,8 @@ ${GAME_DATA.records.filter((r) => r.status === 'convertible').map((rec) => `    
       <ul>
 ${GAME_DATA.records.filter((r) => r.status !== 'convertible').map((rec) => `        <li>${rec.game}<span class="note">${rec.settingName ? ` — ${rec.settingName}` : ''}</span></li>`).join('\n')}
       </ul>
+      <p class="note">Run a community site, league, or guide? <a href="/embed/">Embed this
+      calculator</a> — no analytics, no cookies, no external requests.</p>
     </section>`;
 // The production calculator is generated here once, then shared by the homepage,
 // the canonical tool route, and (with its share-card action omitted) the embed.
@@ -397,11 +400,12 @@ export const PAGES = [
   ...WHEELBASE_PAGES,
   ...COMPARE_PAGES,
   ...COMPAT_PAGES,
+  ...UPGRADE_PAGES,
   {
     path: '/tools/fov/',
-    title: 'Sim Racing FOV Calculator — flat, curved & triple screens',
+    title: 'Sim Racing FOV Calculator — flat, curved, triples',
     description:
-      'A dedicated sim-racing FOV geometry lab with canonical share state, annotated calculations, game-convention evidence, and flat, curved, or triple-screen results.',
+      'A sim-racing FOV geometry lab with share links, annotated calculations, sourced game conventions, and flat, curved, or triple-screen results.',
     styles: ['/styles/tool.css'],
     scripts: ['/js/tools/fov-ui.mjs'],
     body: FOV_TOOL_BODY,

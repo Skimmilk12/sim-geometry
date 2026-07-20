@@ -77,6 +77,32 @@ test('launched build: robots indexable, canonical, stylesheets, .nojekyll, skip 
       const html = fs.readFileSync(path.join(out, page), 'utf8');
       assert.doesNotMatch(html, /â€|Ã©|Â°/, `${page} carries no encoding mojibake`);
     }
+    // SERP-length + share-tag invariants on EVERY built page (Ahrefs audit
+    // 2026-07-19: 29 long titles, 10 long descriptions, no OG/Twitter tags)
+    const allPages = [];
+    (function walk(dir) {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) walk(p);
+        else if (e.name.endsWith('.html')) allPages.push(p);
+      }
+    })(out);
+    for (const f of allPages) {
+      const html = fs.readFileSync(f, 'utf8');
+      const rel = path.relative(out, f).replace(/\\/g, '/');
+      if (rel === 'embed/fov/index.html') continue; // exactly the noindex iframe surface
+      const pageTitle = (html.match(/<title>([^<]*)<\/title>/) ?? [])[1] ?? '';
+      const desc = (html.match(/<meta name="description" content="([^"]*)"/) ?? [])[1] ?? '';
+      assert.ok(pageTitle.length > 0 && pageTitle.length <= 65, `${rel}: title ${pageTitle.length} chars (${pageTitle})`);
+      assert.ok(desc.length > 0 && desc.length <= 160, `${rel}: description ${desc.length} chars`);
+      for (const tag of ['og:title', 'og:type', 'og:description', 'og:url', 'og:image', 'og:site_name']) {
+        assert.match(html, new RegExp(`property="${tag}"`), `${rel}: ${tag} present`);
+      }
+      assert.match(html, /name="twitter:card" content="summary_large_image"/, `${rel}: twitter card present`);
+      const canonicalHref = (html.match(/rel="canonical" href="([^"]+)"/) ?? [])[1];
+      const ogUrl = (html.match(/property="og:url" content="([^"]+)"/) ?? [])[1];
+      assert.equal(ogUrl, canonicalHref, `${rel}: og:url equals canonical`);
+    }
   } finally {
     fs.rmSync(out, { recursive: true, force: true });
   }
